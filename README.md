@@ -12,6 +12,9 @@
 
 Diem Core implements a decentralized, programmable database which provides a financial infrastructure that can empower billions of people.
 
+## About this fork
+This fork is aimed for adding Post-Quamtum Cryptography (PQC) support in Diem Core using Open Quantum Safe (OQS) library liboqs. Detailed description will be updated soon.
+
 ## Note to Developers
 * Diem Core is a prototype.
 * The APIs are constantly evolving and designed to demonstrate types of functionality. Expect substantial changes before the release.
