@@ -34,8 +34,7 @@ x25519-dalek = { version = "0.1.0", package = "x25519-dalek-fiat", default-featu
 aes-gcm = "0.8.0"
 diem-crypto-derive = { path = "../crypto-derive", version = "0.0.1" }
 bcs = "0.1.2"
-oqs = { path = "../../liboqs-rust/oqs" }
-oqs-sys = { path = "../../liboqs-rust/oqs-sys" }
+oqs = "*"
 itertools = "*"
 
 [dev-dependencies]
