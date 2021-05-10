@@ -34,7 +34,8 @@ x25519-dalek = { version = "0.1.0", package = "x25519-dalek-fiat", default-featu
 aes-gcm = "0.8.0"
 diem-crypto-derive = { path = "../crypto-derive", version = "0.0.1" }
 bcs = "0.1.2"
-oqs = "*"
+oqs = { path = "./oqs" }
+oqs-sys = { path = "./oqs-sys" }
 itertools = "*"
 
 [dev-dependencies]
@@ -47,8 +48,6 @@ criterion = "0.3.4"
 sha3 = "0.9.1"
 serde_json = "1.0.64"
 trybuild = "1.0.41"
-
-diem-workspace-hack = { path = "../../workspace-hack" }
 
 [features]
 default = ["fiat"]

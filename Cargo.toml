@@ -43,6 +43,8 @@ members = [
     "consensus/safety-rules",
     "crypto/crypto",
     "crypto/crypto-derive",
+    "crypto/crypto/oqs",
+    "crypto/crypto/oqs-sys",
     "devtools/x",
     "devtools/x-core",
     "devtools/x-lint",
