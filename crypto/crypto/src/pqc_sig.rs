@@ -113,9 +113,6 @@ impl PQCPrivateKey {
         Ok(PQCPrivateKey {
             LENGTH: sig.sig.length_secret_key(),
             SIG: sig.clone(),
-            /// KEY: oqs::sig::SecretKey {
-            ///     bytes: sig.sig.secret_key_from_bytes(bytes_param).unwrap().deref().to_vec()
-            /// }
             KEY: sig.sig.secret_key_from_bytes(bytes_param).unwrap().to_owned()
         })
     }
@@ -182,9 +179,6 @@ impl PQCPublicKey {
         Ok(PQCPublicKey {
             LENGTH: sig.sig.length_public_key(),
             SIG: sig.clone(),
-            /// KEY: oqs::sig::PublicKey {
-            ///     bytes: sig.sig.public_key_from_bytes(bytes_param).unwrap().deref().to_vec()
-            /// }
             KEY: sig.sig.public_key_from_bytes(bytes_param).unwrap().to_owned()
         })
     }
@@ -244,9 +238,6 @@ impl PQCSignature {
         Ok(PQCSignature {
             LENGTH: sig.sig.length_signature(),
             SIG: sig.clone(),
-            /// SIGNATURE: oqs::sig::Signature {
-            ///     bytes: sig.sig.signature_from_bytes(bytes_param).unwrap().deref().to_vec()
-            /// }
             SIGNATURE: sig.sig.signature_from_bytes(bytes_param).unwrap().to_owned()
         })
     }
@@ -320,10 +311,10 @@ impl Uniform for PQCPrivateKey {
         /// 由于Diem规定的trait只允许这个函数传入一个rng参数
         /// 所以这里直接传入默认的算法标记
         /// 之后对这一点进行修改，使整个模块维护一个全局的当前算法标记和签名对象
-        let sig = LiboqsSig::try_from(oqs::sig::Algorithm::default());
+        let sig = LiboqsSig::try_from(CURR_ALGORITHM);
         /// const length = sig.length_secret_key();
         /// 这里需要后续修改。把32换成符合要求的*常量*
-        let mut bytes = [0u8; 32];
+        let mut bytes = [0u8; SECRET_KEY_LENGTH];
         rng.fill_bytes(&mut bytes);
         PQCPrivateKey::new(&bytes).unwrap()
     }
@@ -351,9 +342,9 @@ impl ValidCryptoMaterial for PQCPrivateKey {
 
 impl Genesis for PQCPrivateKey {
     fn genesis() -> Self {
-        let sig = LiboqsSig::try_from(oqs::sig::Algorithm::default()).unwrap();
+        let sig = LiboqsSig::try_from(CURR_ALGORITHM).unwrap();
         /// const length = sig.length_secret_key;
-        let mut buf = [0u8; 32];
+        let mut buf = [0u8; SECRET_KEY_LENGTH];
         buf[sig.sig.length_secret_key() - 1] = 1;
         Self::try_from(buf.as_ref()).unwrap()
     }
@@ -361,18 +352,11 @@ impl Genesis for PQCPrivateKey {
 
 /// PublicKey Traits
 
-/// impl From<&[u8]> for PQCPublicKey {
-///     fn from(bytes: &[u8]) -> Self {
-///         PQCPublicKey::try_from(bytes).unwrap()
-///     }
-/// }
-
 /// 根据私钥生成公钥，在Ed25519的实现里实现了这个trait
 /// 但liboqs的实现中是使用keypair一次性生成公私钥
 impl From<&PQCPrivateKey> for PQCPublicKey {
     fn from(private_key: &PQCPrivateKey) -> Self {
-        let sig = LiboqsSig::try_from(oqs::sig::Algorithm::default());
-        /// const length = sig.length_public_key;
+        let sig = LiboqsSig::try_from(CURR_ALGORITHM);
         let bytes = [0u8; PUBLIC_KEY_LENGTH];
         let public: PQCPublicKey = PQCPublicKey::new(&bytes).unwrap();
         public
