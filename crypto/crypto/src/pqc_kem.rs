@@ -41,6 +41,12 @@ fn SharedSecretVecToArray(v: Vec<u8>) -> [u8; SHARED_SECRET_LENGTH] {
     arr
 }
 
+
+/// Return current used algorithm
+pub fn curr_alg() -> oqs::kem::Kem::Algorithm {
+    CURR_ALGORITHM
+}
+
 /// Key encapsulation scheme struct of liboqs
 pub struct LiboqsKem {
     alg: oqs::kem::Algorithm,
@@ -131,7 +137,7 @@ impl PrivateKey {
     }
 
     /// Decapsulate provided ciphertext to get the shared secret
-    pub fn decapsulate(&self, ct: &Ciphertext) -> [u8; SHARED_SECRET_LENGTH] {
+    pub fn decapsulate(&self, ct: &oqs::kem::Ciphertext) -> [u8; SHARED_SECRET_LENGTH] {
         let secret_key: &oqs::kem::SecretKey = &self.KEY;
         let kem = self.KEM.kem.decapsulate(
             oqs::kem::SecretKeyRef::from(secret_key),
@@ -234,7 +240,7 @@ impl ValidCryptoMaterial for PrivateKey {
 }
 
 impl PartialEq for PrivateKey {
-    fn eq(&Self, other: &Self) -> bool {
+    fn eq(&self, other: &PrivateKey) -> bool {
         self.to_bytes() == other.to_bytes
     }
 }
@@ -269,13 +275,13 @@ impl traits::ValidCryptoMaterial for PublicKey {
 }
 
 impl std::fmt::Display for PublicKey {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", hex::encode(self.KEY.clone().into_vec()))
     }
 }
 
 impl fmt::Debug for PublicKey {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "PublicKey({})", self)
     }
 }

@@ -1,7 +1,7 @@
 use crate as diem_crypto;
 use crate::{
-    pqc_sig::{PQCPrivateKey, PQCPublicKey, PQCSignature, curr_alg, keypair},
-    pqc_kem::{PrivateKey, PublicKey, keypair},
+    pqc_sig::{PQCPrivateKey, PQCPublicKey, PQCSignature, curr_alg, keypair as sig_keypair},
+    pqc_kem::{PrivateKey, PublicKey, keypair as kem_keypair},
     test_utils::{random_serializable_struct, uniform_keypair_strategy},
     traits::*,
 };
@@ -21,9 +21,9 @@ fn test_pqc_sig() {
 
 fn test_pqc() {
     // Keys used for KEMs and long-term secrets
-    let (kem_sk, kem_pk) = pqc_kem::keypair();
-    let (a_sig_sk, a_sig_pk) = pqc_sig::keypair();
-    let (b_sig_sk, b_sig_pk) = pqc_sig::keypair();
+    let (kem_sk, kem_pk) = kem_keypair();
+    let (a_sig_sk, a_sig_pk) = sig_keypair();
+    let (b_sig_sk, b_sig_pk) = sig_keypair();
     
     // Assumption: A has (a_sig_sk, a_sig_pk, b_sig_pk)
     // Assumption: B has (b_sig_sk, b_sig_pk, a_sig_pk)
