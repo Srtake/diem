@@ -88,7 +88,7 @@ pub struct PrivateKey {
 
 /// This type should be used to deserialize a received public key
 #[derive(
-    Default, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, SerializeKey, DeserializeKey,
+    Default, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, SerializeKey, DeserializeKey,
 )]
 pub struct PublicKey {
     LENGTH: usize,
