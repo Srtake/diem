@@ -43,7 +43,7 @@ fn SharedSecretVecToArray(v: Vec<u8>) -> [u8; SHARED_SECRET_LENGTH] {
 
 
 /// Return current used algorithm
-pub fn curr_alg() -> oqs::kem::Kem::Algorithm {
+pub fn curr_alg() -> oqs::kem::Algorithm {
     CURR_ALGORITHM
 }
 
