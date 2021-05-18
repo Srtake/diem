@@ -1,4 +1,4 @@
-//! This module provides an API for the Post-Quantum Cryptography algorithms
+//! This module provides an API for the Post-Quantum Cryptography signature algorithms
 //! implemented in Open Quantum Safe library liboqs.
 
 use crate::{
@@ -117,7 +117,7 @@ impl PQCPrivateKey {
         })
     }
 
-    /// Construct a private key from a OQS SecretKey type
+    /// Construct a private key from an OQS SecretKey type
     pub fn new_from_oqs(sk: &oqs::sig::SecretKey) -> Result<Self, CryptoMaterialError> {
         let sig = LiboqsSig::try_from(CURR_ALGORITHM).unwrap();
         Ok(PQCPrivateKey {
@@ -308,12 +308,7 @@ impl Uniform for PQCPrivateKey {
     where
         R: ::rand::RngCore + ::rand::CryptoRng,
     {
-        /// 由于Diem规定的trait只允许这个函数传入一个rng参数
-        /// 所以这里直接传入默认的算法标记
-        /// 之后对这一点进行修改，使整个模块维护一个全局的当前算法标记和签名对象
         let sig = LiboqsSig::try_from(CURR_ALGORITHM);
-        /// const length = sig.length_secret_key();
-        /// 这里需要后续修改。把32换成符合要求的*常量*
         let mut bytes = [0u8; SECRET_KEY_LENGTH];
         rng.fill_bytes(&mut bytes);
         PQCPrivateKey::new(&bytes).unwrap()
