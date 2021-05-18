@@ -278,6 +278,12 @@ impl traits::PublicKey for PublicKey {
     type PrivateKeyMaterial = PrivateKey;
 }
 
+impl PartialEq for PublicKey {
+    fn eq(&self, other: &PublicKey) -> bool {
+        self.to_bytes() == other.to_bytes()
+    }
+}
+
 impl Eq for PublicKey {}
 
 impl std::hash::Hash for PublicKey {
