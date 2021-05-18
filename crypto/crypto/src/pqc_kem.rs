@@ -279,3 +279,10 @@ impl fmt::Debug for PublicKey {
         write!(f, "PublicKey({})", self)
     }
 }
+
+/// Generate a keypair
+pub fn keypair() -> (PrivateKey, PublicKey) {
+    let kemalg = oqs::kem::Kem::new(curr_alg());
+    let (pk, sk) = kemalg.keypair().unwrap();
+    (PrivateKey::new_from_oqs(&sk), PublicKey::new_from_oqs(&pk))
+}

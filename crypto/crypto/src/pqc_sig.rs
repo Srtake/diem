@@ -41,6 +41,11 @@ fn signatureVecToArray(v: Vec<u8>) -> [u8; SIGNATURE_LENGTH] {
     arr
 }
 
+/// return current used algorithm
+pub fn curr_alg() -> oqs::sig::Algorithm {
+    CURR_ALGORITHM
+}
+
 /// Signature scheme struct of liboqs
 pub struct LiboqsSig {
     alg: oqs::sig::Algorithm,
@@ -504,4 +509,11 @@ impl fmt::Debug for PQCSignature {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "PQCSignature({})", self)
     }
+}
+
+/// Generate a keypair
+pub fn keypair() -> (PQCPrivateKey, PQCPublicKey) {
+    let sigalg = oqs::sig::Sig::new(curr_alg());
+    let (pk, sk) = sigalg.keypair().unwrap();
+    (PQCPrivateKey::new_from_oqs(&sk), PQCPublicKey::new_from_oqs(&pk))
 }
