@@ -19,6 +19,7 @@ fn test_pqc_sig() {
     assert!(signature.verify_arbitrary_msg(message, &public_key).is_ok());
 }
 
+#[test]
 fn test_pqc() {
     // Keys used for KEMs and long-term secrets
     let (kem_sk, kem_pk) = kem_keypair();
