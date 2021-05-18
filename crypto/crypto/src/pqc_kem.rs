@@ -278,7 +278,7 @@ impl traits::PublicKey for PublicKey {
     type PrivateKeyMaterial = PrivateKey;
 }
 
-impl Eq for PQCPublicKey {}
+impl Eq for PublicKey {}
 
 impl std::hash::Hash for PublicKey {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
