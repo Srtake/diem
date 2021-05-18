@@ -280,7 +280,7 @@ impl std::fmt::Display for PublicKey {
     }
 }
 
-impl fmt::Debug for PublicKey {
+impl std::fmt::Debug for PublicKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "PublicKey({})", self)
     }
