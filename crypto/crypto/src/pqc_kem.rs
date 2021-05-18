@@ -136,13 +136,13 @@ impl PrivateKey {
     }
 
     /// Decapsulate provided ciphertext to get the shared secret
-    pub fn decapsulate(&self, ct: &oqs::kem::Ciphertext) -> [u8; SHARED_SECRET_LENGTH] {
+    pub fn decapsulate(&self, ct: &oqs::kem::Ciphertext) -> oqs::kem::SharedSecret {
         let secret_key: &oqs::kem::SecretKey = &self.KEY;
         let kem = self.KEM.kem.decapsulate(
             oqs::kem::SecretKeyRef::from(secret_key),
             oqs::kem::CiphertextRef::from(ct)
         ).unwrap();
-        SharedSecretVecToArray(kem.clone().into_vec())
+        kem.clone()
     }
 }
 
@@ -182,7 +182,7 @@ impl PublicKey {
     }
 
     /// Encapsulate using the public key to get ciphertext (sent to remote end) and shared secret (stored locally)
-    pub fn encapsulate(&self) -> (Ciphertext, SharedSecret) {
+    pub fn encapsulate(&self) -> (oqs::kem::Ciphertext, oqs::kem::SharedSecret) {
         let public_key: &oqs::kem::PublicKey = &self.KEY;
         let (ct, ss) = self.KEM.kem.encapsulate(oqs::kem::PublicKeyRef::from(public_key)).unwrap();
         (
@@ -276,6 +276,15 @@ impl From<&PrivateKey> for PublicKey {
 
 impl traits::PublicKey for PublicKey {
     type PrivateKeyMaterial = PrivateKey;
+}
+
+impl Eq for PQCPublicKey {}
+
+impl std::hash::Hash for PublicKey {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        let encoded_pubkey = self.to_bytes();
+        state.write(&encoded_pubkey);
+    }
 }
 
 impl traits::ValidCryptoMaterial for PublicKey {
