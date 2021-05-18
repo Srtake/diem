@@ -264,6 +264,17 @@ impl std::convert::TryFrom<&[u8]> for PublicKey {
     }
 }
 
+/// 根据私钥生成公钥，在Ed25519的实现里实现了这个trait
+/// 但liboqs的实现中是使用keypair一次性生成公私钥
+impl From<&PrivateKey> for PublicKey {
+    fn from(private_key: &PrivateKey) -> Self {
+        let sig = LiboqsKem::try_from(CURR_ALGORITHM);
+        let bytes = [0u8; PUBLIC_KEY_LENGTH];
+        let public: PublicKey = PublicKey::new(&bytes).unwrap();
+        public
+    }
+}
+
 impl traits::PublicKey for PublicKey {
     type PrivateKeyMaterial = PrivateKey;
 }
