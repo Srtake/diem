@@ -23,19 +23,19 @@ const SECRET_KEY_LENGTH: usize = 2528;
 const PUBLIC_KEY_LENGTH: usize = 1312;
 const SIGNATURE_LENGTH: usize = 2420;
 
-fn secretKeyVecToArray(v: Vec<u8>) -> [u8; SECRET_KEY_LENGTH] {
+pub fn secretKeyVecToArray(v: Vec<u8>) -> [u8; SECRET_KEY_LENGTH] {
     let mut arr = [0u8; SECRET_KEY_LENGTH];
     arr.iter_mut().set_from(v.iter().cloned());
     arr
 }
 
-fn publicKeyVecToArray(v: Vec<u8>) -> [u8; PUBLIC_KEY_LENGTH] {
+pub fn publicKeyVecToArray(v: Vec<u8>) -> [u8; PUBLIC_KEY_LENGTH] {
     let mut arr = [0u8; PUBLIC_KEY_LENGTH];
     arr.iter_mut().set_from(v.iter().cloned());
     arr
 }
 
-fn signatureVecToArray(v: Vec<u8>) -> [u8; SIGNATURE_LENGTH] {
+pub fn signatureVecToArray(v: Vec<u8>) -> [u8; SIGNATURE_LENGTH] {
     let mut arr = [0u8; SIGNATURE_LENGTH];
     arr.iter_mut().set_from(v.iter().cloned());
     arr

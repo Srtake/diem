@@ -1,7 +1,7 @@
 use crate as diem_crypto;
 use crate::{
     pqc_sig::{PQCPrivateKey, PQCPublicKey, PQCSignature, curr_alg, keypair as sig_keypair},
-    pqc_kem::{PrivateKey, PublicKey, keypair as kem_keypair},
+    pqc_kem::{PrivateKey, PublicKey, keypair as kem_keypair, CiphertextVecToArray},
     test_utils::{random_serializable_struct, uniform_keypair_strategy},
     traits::*,
 };
@@ -34,10 +34,10 @@ fn test_pqc() {
     // B -> A: kem_ct, signature
     signature.verify_arbitrary_msg(&(kem_pk.to_bytes()), &a_sig_pk);
     let (kem_ct, b_kem_ss) = kem_pk.encapsulate();
-    let signature = b_sig_sk.sign_arbitrary_message(&kem_ct);
+    let signature = b_sig_sk.sign_arbitrary_message(&(CiphertextVecToArray(kem_ct.clone().into_vec())));
 
     // A verifies, decapsulates, now both have kem_ss
-    signature.verify_arbitrary_msg(&kem_ct, &b_sig_pk);
+    signature.verify_arbitrary_msg(&(CiphertextVecToArray(kem_ct.clone().into_vec())), &b_sig_pk);
     let a_kem_ss = kem_sk.decapsulate(&kem_ct);
     assert_eq!(a_kem_ss, b_kem_ss);
 }
