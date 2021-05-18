@@ -71,7 +71,7 @@ impl Clone for LiboqsKem {
 
 impl LiboqsKem {
     /// Create a new Liboqs key encapsulation object
-    pub fn new(alg: oqs::kem::Algorithm) -> Result<Self> {
+    pub fn new(alg: oqs::kem::Algorithm) -> Result<Self, CryptoMaterialError> {
         oqs::init();
         let kem = oqs::kem::Kem::try_from(alg).unwrap();
         Ok(Self { alg, kem })
