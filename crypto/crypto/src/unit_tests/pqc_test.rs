@@ -40,6 +40,4 @@ fn test_pqc() {
     signature.verify_arbitrary_msg(&kem_ct, &b_sig_pk);
     let a_kem_ss = kem_sk.decapsulate(&kem_ct);
     assert_eq!(a_kem_ss, b_kem_ss);
-
-    Ok(())
 }

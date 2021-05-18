@@ -8,6 +8,7 @@ use crate::{
 use diem_crypto_derive::{DeserializeKey, SerializeKey, SilentDebug, SilentDisplay};
 use rand::{CryptoRng, RngCore};
 use std::convert::{TryFrom, TryInto};
+use itertools::Itertools;
 
 pub use oqs;
 
@@ -87,9 +88,7 @@ pub struct PrivateKey {
 }
 
 /// This type should be used to deserialize a received public key
-#[derive(
-    Default, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, SerializeKey, DeserializeKey,
-)]
+#[derive(Clone, SerializeKey, DeserializeKey)]
 pub struct PublicKey {
     LENGTH: usize,
     KEM: LiboqsKem,
@@ -143,7 +142,7 @@ impl PrivateKey {
             oqs::kem::SecretKeyRef::from(secret_key),
             oqs::kem::CiphertextRef::from(ct)
         ).unwrap();
-        CiphertextVecToArray(kem.clone().into_vec())
+        SharedSecretVecToArray(kem.clone().into_vec())
     }
 }
 
@@ -183,12 +182,12 @@ impl PublicKey {
     }
 
     /// Encapsulate using the public key to get ciphertext (sent to remote end) and shared secret (stored locally)
-    pub fn encapsulate(&self) -> ([u8; CIPHERTEXT_LENGTH], [u8; SHARED_SECRET_LENGTH]) {
+    pub fn encapsulate(&self) -> (Ciphertext, SharedSecret) {
         let public_key: &oqs::kem::PublicKey = &self.KEY;
         let (ct, ss) = self.KEM.kem.encapsulate(oqs::kem::PublicKeyRef::from(public_key)).unwrap();
         (
-            CiphertextVecToArray(ct.clone().into_vec()),
-            SharedSecretVecToArray(ss.clone().into_vec())
+            ct.clone(),
+            ss.clone()
         )
     }
 }
@@ -202,7 +201,7 @@ impl PublicKey {
 
 impl std::convert::From<[u8; SECRET_KEY_LENGTH]> for PrivateKey {
     fn from(private_key_bytes: [u8; SECRET_KEY_LENGTH]) -> Self {
-        PrivateKey::new(&private_key_bytes)
+        PrivateKey::new(&private_key_bytes).unwrap()
     }
 }
 
@@ -213,7 +212,7 @@ impl std::convert::TryFrom<&[u8]> for PrivateKey {
         let private_key_bytes: [u8; SECRET_KEY_LENGTH] = private_key_bytes
             .try_into()
             .map_err(|_| traits::CryptoMaterialError::DeserializationError)?;
-        Ok(PrivateKey::new(private_key_bytes))
+        Ok(PrivateKey::new(&private_key_bytes).unwrap())
     }
 }
 
@@ -241,7 +240,7 @@ impl ValidCryptoMaterial for PrivateKey {
 
 impl PartialEq for PrivateKey {
     fn eq(&self, other: &PrivateKey) -> bool {
-        self.to_bytes() == other.to_bytes
+        self.to_bytes() == other.to_bytes()
     }
 }
 
@@ -249,7 +248,7 @@ impl PartialEq for PrivateKey {
 
 impl std::convert::From<[u8; PUBLIC_KEY_LENGTH]> for PublicKey {
     fn from(public_key_bytes: [u8; PUBLIC_KEY_LENGTH]) -> Self {
-        PublicKey::new(&public_key_bytes)
+        PublicKey::new(&public_key_bytes).unwrap()
     }    
 }
 
@@ -260,7 +259,7 @@ impl std::convert::TryFrom<&[u8]> for PublicKey {
         let public_key_bytes: [u8; PUBLIC_KEY_LENGTH] = public_key_bytes
             .try_into()
             .map_err(|_| traits::CryptoMaterialError::WrongLengthError)?;
-        Ok(PublicKey::new(public_key_bytes))
+        Ok(PublicKey::new(&public_key_bytes).unwrap())
     }
 }
 
@@ -301,5 +300,5 @@ impl std::fmt::Debug for PublicKey {
 pub fn keypair() -> (PrivateKey, PublicKey) {
     let kemalg = oqs::kem::Kem::new(curr_alg()).unwrap();
     let (pk, sk) = kemalg.keypair().unwrap();
-    (PrivateKey::new_from_oqs(&sk), PublicKey::new_from_oqs(&pk))
+    (PrivateKey::new_from_oqs(&sk).unwrap(), PublicKey::new_from_oqs(&pk).unwrap())
 }

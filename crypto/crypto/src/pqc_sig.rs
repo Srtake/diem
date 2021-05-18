@@ -515,5 +515,5 @@ impl fmt::Debug for PQCSignature {
 pub fn keypair() -> (PQCPrivateKey, PQCPublicKey) {
     let sigalg = oqs::sig::Sig::new(curr_alg()).unwrap();
     let (pk, sk) = sigalg.keypair().unwrap();
-    (PQCPrivateKey::new_from_oqs(&sk), PQCPublicKey::new_from_oqs(&pk))
+    (PQCPrivateKey::new_from_oqs(&sk).unwrap(), PQCPublicKey::new_from_oqs(&pk).unwrap())
 }
