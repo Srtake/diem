@@ -18,6 +18,7 @@ pub mod test_utils;
 pub mod traits;
 pub mod x25519;
 pub mod pqc_sig;
+pub mod pqc_kem;
 
 #[cfg(test)]
 mod unit_tests;
