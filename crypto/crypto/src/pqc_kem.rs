@@ -154,7 +154,9 @@ impl PrivateKey {
 
     /// Decapsulate provided raw ciphertext to get the shared secret
     pub fn decapsulate_from_raw(&self, ct: &[u8]) -> oqs::kem::SharedSecret {
-        let ct = self.KEM.kem.ciphertext_from_bytes(ct).ok_or::<PQCKemError>(Err(PQCKemError::CiphertextLengthNotCorrect)).unwrap();
+        let ct = self.KEM.kem.ciphertext_from_bytes(ct)
+            .ok_or::<std::result::Result>(Err(PQCKemError::CiphertextLengthNotCorrect))
+            .unwrap();
         self.decapsulate(&ct.to_owned().clone())
     }
 }
