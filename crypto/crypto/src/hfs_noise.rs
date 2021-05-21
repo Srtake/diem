@@ -554,7 +554,7 @@ impl HfsNoiseConfig {
         let ekem1 = pqc_kem::CiphertextVecToArray(ekem1.clone().into_vec());
         let shared_secret = pqc_kem::SharedSecretVecToArray(shared_secret.clone().into_vec());
         let msg_and_ad = Payload {
-            msg: ekem1.unwrap_or_else(|| &[]),
+            msg: ekem1,
             aad: &h,
         };
         let nonce = GenericArray::from_slice(&[0u8; AES_NONCE_SIZE]);

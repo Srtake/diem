@@ -85,7 +85,7 @@ fn simple_handshake() {
                 message.extend_from_slice(&auth_tag);
                 responder_session
                     .read_message_in_place(&mut message)
-                    .expect("session should not be closed");
+                    .expect("session should not be closed")
             } else {
                 let auth_tag = responder_session
                     .write_message_in_place(&mut message)
@@ -93,7 +93,7 @@ fn simple_handshake() {
                 message.extend_from_slice(&auth_tag);
                 initiator_session
                     .read_message_in_place(&mut message)
-                    .expect("session should not be closed");
+                    .expect("session should not be closed")
             };
             assert_eq!(received_message, message_sent.as_slice());
         }
