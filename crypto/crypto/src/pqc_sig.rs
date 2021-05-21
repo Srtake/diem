@@ -19,9 +19,9 @@ use itertools::Itertools;
 pub use oqs;
 
 const CURR_ALGORITHM: oqs::sig::Algorithm = oqs::sig::Algorithm::Dilithium2;
-const SECRET_KEY_LENGTH: usize = 2528;
-const PUBLIC_KEY_LENGTH: usize = 1312;
-const SIGNATURE_LENGTH: usize = 2420;
+pub const SECRET_KEY_LENGTH: usize = 2528;
+pub const PUBLIC_KEY_LENGTH: usize = 1312;
+pub const SIGNATURE_LENGTH: usize = 2420;
 
 pub fn secretKeyVecToArray(v: Vec<u8>) -> [u8; SECRET_KEY_LENGTH] {
     let mut arr = [0u8; SECRET_KEY_LENGTH];

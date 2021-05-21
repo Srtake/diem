@@ -13,10 +13,10 @@ use itertools::Itertools;
 pub use oqs;
 
 const CURR_ALGORITHM: oqs::kem::Algorithm = oqs::kem::Algorithm::Kyber512;
-const SECRET_KEY_LENGTH: usize = 1632;
-const PUBLIC_KEY_LENGTH: usize = 800;
-const CIPHERTEXT_LENGTH: usize = 768;
-const SHARED_SECRET_LENGTH: usize = 32;
+pub const SECRET_KEY_LENGTH: usize = 1632;
+pub const PUBLIC_KEY_LENGTH: usize = 800;
+pub const CIPHERTEXT_LENGTH: usize = 768;
+pub const SHARED_SECRET_LENGTH: usize = 32;
 
 pub fn secretKeyVecToArray(v: Vec<u8>) -> [u8; SECRET_KEY_LENGTH] {
     let mut arr = [0u8; SECRET_KEY_LENGTH];
