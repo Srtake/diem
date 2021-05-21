@@ -365,9 +365,8 @@ impl HfsNoiseConfig {
             .decrypt(nonce, ct_and_ad)
             .map_err(|_| HfsNoiseError::Decrypt)?;
         mix_hash(&mut h, &received_rekem1);
-        let rekem1_ciphertext = oqs::kem::CiphertextRef::new(pqc_kem::CiphertextVecToArray(received_rekem1)).to_owned();
         let rekem1 = pqc_kem::SharedSecretVecToArray(
-            e1.decapsulate(&rekem1_ciphertext).clone().into_vec());
+            e1.decapsulate_from_raw(&pqc_kem::CiphertextVecToArray(received_rekem1)).clone().into_vec());
         let k = mix_key(&mut ck, &rekem1)?;
 
         // <- se

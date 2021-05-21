@@ -144,6 +144,12 @@ impl PrivateKey {
         ).unwrap();
         kem.clone()
     }
+
+    /// Decapsulate provided raw ciphertext to get the shared secret
+    pub fn decapsulate_from_raw(&self, ct: &[u8]) -> oqs::kem::SharedSecret {
+        let ct = self.KEM.kem.ciphertext_from_bytes(ct);
+        self.decapsulate(ct)
+    }
 }
 
 impl PublicKey {
