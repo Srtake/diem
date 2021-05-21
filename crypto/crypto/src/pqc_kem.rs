@@ -155,7 +155,7 @@ impl PrivateKey {
     pub fn decapsulate_from_raw(&self, ct: &[u8]) -> oqs::kem::SharedSecret {
         let ct = match self.KEM.kem.ciphertext_from_bytes(ct) {
             Some(ct) => ct,
-            None => return Err(PQCKemError::CiphertextLengthNotCorrect)
+            None => None
         };
         self.decapsulate(&ct.to_owned().clone())
     }
