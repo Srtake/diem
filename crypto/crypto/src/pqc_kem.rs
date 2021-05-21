@@ -42,6 +42,12 @@ pub fn SharedSecretVecToArray(v: Vec<u8>) -> [u8; SHARED_SECRET_LENGTH] {
     arr
 }
 
+#[derive(Debug, Error)]
+pub enum PQCKemError {
+    #[error("Length of ciphertext array is not correct.")]
+    CiphertextLengthNotCorrect,
+}
+
 
 /// Return current used algorithm
 pub fn curr_alg() -> oqs::kem::Algorithm {
@@ -147,7 +153,10 @@ impl PrivateKey {
 
     /// Decapsulate provided raw ciphertext to get the shared secret
     pub fn decapsulate_from_raw(&self, ct: &[u8]) -> oqs::kem::SharedSecret {
-        let ct = self.KEM.kem.ciphertext_from_bytes(ct);
+        let ct = match self.KEM.kem.ciphertext_from_bytes(ct) {
+            Some(ct) => ct,
+            None => return Err(PQCKemError::CiphertextLengthNotCorrect)
+        };
         self.decapsulate(&ct.to_owned().clone())
     }
 }
