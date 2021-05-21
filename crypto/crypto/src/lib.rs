@@ -19,6 +19,7 @@ pub mod traits;
 pub mod x25519;
 pub mod pqc_sig;
 pub mod pqc_kem;
+pub mod hfs_noise;
 
 #[cfg(test)]
 mod unit_tests;

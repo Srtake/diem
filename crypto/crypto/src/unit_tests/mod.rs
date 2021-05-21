@@ -11,3 +11,4 @@ mod hkdf_test;
 mod multi_ed25519_test;
 mod noise_test;
 mod pqc_test;
+mod hfs_noise_test;
