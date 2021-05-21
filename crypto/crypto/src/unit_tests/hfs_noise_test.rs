@@ -7,7 +7,7 @@ use crate::{
 };
 
 use rand::SeedableRng;
-use serde::*；
+use serde::*;
 
 #[test]
 fn simple_handshake() {

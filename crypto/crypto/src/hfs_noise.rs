@@ -220,7 +220,7 @@ impl HfsNoiseConfig {
     /// An initiator can use this function to initiate a handshake with a known responder.
     pub fn initiate_connection(
         &self,
-        rng: &mut (impl rnad::RngCore + rand::CryptoRng),
+        rng: &mut (impl rand::RngCore + rand::CryptoRng),
         prologue: &[u8],
         remote_public: x25519::PublicKey,
         payload: Option<&[u8]>,
@@ -322,7 +322,7 @@ impl HfsNoiseConfig {
     /// A client can call this to finalize a connection, after receiving an answer from a server
     pub fn finalize_connection(
         &self,
-        handshake_state: InitiatorHandshakeState,
+        handshake_state: HfsInitiatorHandshakeState,
         received_message: &[u8],
     ) -> Result<(Vec<u8>, HfsNoiseSession), HfsNoiseError> {
         // checks
@@ -330,7 +330,7 @@ impl HfsNoiseConfig {
             return Err(HfsNoiseError::ReceivedMsgTooLarge);
         }
         // retrieve handshake state
-        let InitiatorHandshakeState {
+        let HfsInitiatorHandshakeState {
             mut h,
             mut ck,
             e,
@@ -349,18 +349,18 @@ impl HfsNoiseConfig {
 
         // <- ee
         let dh_output = e.diffie_hellman(&re);
-        mix_key(&mut ck, &dh_output)?;
+        let k = mix_key(&mut ck, &dh_output)?;
 
         // <- ekem1
         let aead = Aes256Gcm::new(GenericArray::from_slice(&k));
         let nonce = GenericArray::from_slice(&[0u8; AES_NONCE_SIZE]);
         let mut received_encrypted_rekem1 = [0u8; pqc_kem::PUBLIC_KEY_LENGTH];
-        cursor.read_exact(&mut rekem1)
+        cursor.read_exact(&mut received_encrypted_rekem1)
             .map_err(|_| HfsNoiseError::MsgTooShort)?;
         let ct_and_ad = Payload {
             msg: received_encrypted_rekem1,
             aad: &h,
-        }
+        };
         let received_rekem1 = aead
             .decrypt(nonce, ct_and_ad)
             .map_err(|_| HfsNoiseError::Decrypt);
@@ -378,7 +378,7 @@ impl HfsNoiseConfig {
 
         // <- payload
         let offset = cursor.position() as usize;
-        let received_encrypted_payload = &cursor.into_inner()[offset...];
+        let received_encrypted_payload = &cursor.into_inner()[offset..];
 
         let aead = Aes256Gcm::new(GenericArray::from_slice(&k));
 
@@ -489,7 +489,7 @@ impl HfsNoiseConfig {
 
         // <- payload
         let offset = cursor.position() as usize;
-        let received_encrypted_payload = &cursor.into_inner()[offset...];
+        let received_encrypted_payload = &cursor.into_inner()[offset..];
 
         let aead = Aes256Gcm::new(GenericArray::from_slice(&k));
         
@@ -539,14 +539,14 @@ impl HfsNoiseConfig {
         let e = x25519::PrivateKey::generate(rng);
         let e_pub = e.public_key();
 
-        mix_hash(&mut h, e_pub_as_slice());
+        mix_hash(&mut h, e_pub.as_slice());
         let mut response_buffer = Cursor::new(response_buffer);
         response_buffer.write(e_pub.as_slice())
             .map_err(|_| HfsNoiseError::ResponseBufferTooSmall)?;
 
         // -> ee
         let dh_output = e.diffie_hellman(&re);
-        mix_key(&mut ck, &dh_output)?;
+        let k = mix_key(&mut ck, &dh_output)?;
 
         // -> ekem1
         let (ekem1, shared_secret) = pqc_kem::PublicKey::encapsulate();
@@ -584,7 +584,7 @@ impl HfsNoiseConfig {
         
         // split
         let (k1, k2) = hkdf(&ck, None)?;
-        let session = HfsNoiseSesstion::new(k2, k1, rs);
+        let session = HfsNoiseSession::new(k2, k1, rs);
 
         //
         Ok(session)
