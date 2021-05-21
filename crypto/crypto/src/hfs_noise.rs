@@ -179,7 +179,7 @@ pub struct HfsInitiatorHandshakeState {
     /// pqc ephemeral key
     e1: pqc_kem::PrivateKey,
     /// remote static key used
-    s: x25519::PublicKey,
+    rs: x25519::PublicKey,
 }
 
 /// Refer to the Noise protocol framework specification in order to understand these fields.
@@ -261,15 +261,15 @@ impl HfsNoiseConfig {
         let (e1, e1_pub) = pqc_kem::keypair();
 
         let msg_and_ad = Payload {
-            msg: e1_pub.to_bytes(),
+            msg: &e1_pub.to_bytes(),
             aad: &h,
         };
         let nonce = GenericArray::from_slice(&[0u8; AES_NONCE_SIZE]);
         let encrypted_e1 = aead.encrypt(nonce, msg_and_ad)
-            .map_err(|_| HfsNoiseError::Encrypt);
+            .map_err(|_| HfsNoiseError::Encrypt)?;
         
         mix_hash(&mut h, &encrypted_e1);
-        response_buffer.write(e1_pub.to_bytes())
+        response_buffer.write(&e1_pub.to_bytes())
             .map_err(|_| HfsNoiseError::ResponseBufferTooSmall)?;
         
         // -> es
@@ -358,23 +358,23 @@ impl HfsNoiseConfig {
         cursor.read_exact(&mut received_encrypted_rekem1)
             .map_err(|_| HfsNoiseError::MsgTooShort)?;
         let ct_and_ad = Payload {
-            msg: received_encrypted_rekem1,
+            msg: &received_encrypted_rekem1,
             aad: &h,
         };
         let received_rekem1 = aead
             .decrypt(nonce, ct_and_ad)
-            .map_err(|_| HfsNoiseError::Decrypt);
+            .map_err(|_| HfsNoiseError::Decrypt)?;
         mix_hash(&mut h, &received_rekem1);
         let rekem1_ciphertext = oqs::kem::Ciphertext {
             bytes: received_rekem1
         };
         let rekem1 = pqc_kem::SharedSecretVecToArray(
-            pqc_kem::PrivateKey::decapsulate(&rekem1_ciphertext).clone().into_vec());
-        let k = mix_key(&mut ck, &rekem1);
+            e1.decapsulate(&rekem1_ciphertext).clone().into_vec());
+        let k = mix_key(&mut ck, &rekem1)?;
 
         // <- se
         let dh_output = self.private_key.diffie_hellman(&re);
-        let k = mix_key(&mut ck, &dh_output);
+        let k = mix_key(&mut ck, &dh_output)?;
 
         // <- payload
         let offset = cursor.position() as usize;
@@ -549,10 +549,10 @@ impl HfsNoiseConfig {
         let k = mix_key(&mut ck, &dh_output)?;
 
         // -> ekem1
-        let (ekem1, shared_secret) = pqc_kem::PublicKey::encapsulate();
+        let (ekem1, shared_secret) = re1.encapsulate();
         let aead = Aes256Gcm::new(GenericArray::from_slice(&k));
-        ekem1 = pqc_kem::CiphertextVecToArray(ekem1.clone().into_vec());
-        shared_secret = pqc_kem::SharedSecretVecToArray(shared_secret.clone().into_vec());
+        let ekem1 = pqc_kem::CiphertextVecToArray(ekem1.clone().into_vec());
+        let shared_secret = pqc_kem::SharedSecretVecToArray(shared_secret.clone().into_vec());
         let msg_and_ad = Payload {
             msg: ekem1.unwrap_or_else(|| &[]),
             aad: &h,

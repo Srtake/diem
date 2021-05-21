@@ -80,7 +80,7 @@ impl LiboqsKem {
 }
 
 /// This type should be used to deserialize a received private key
-#[derive(DeserializeKey, SilentDisplay, SilentDebug, SerializeKey)]
+#[derive(Clone, DeserializeKey, SilentDisplay, SilentDebug, SerializeKey)]
 pub struct PrivateKey {
     LENGTH: usize,
     KEM: LiboqsKem,
