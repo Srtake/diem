@@ -443,7 +443,7 @@ impl HfsNoiseConfig {
         // <- es
         let dh_output = self.private_key.diffie_hellman(&re);
         let k = mix_key(&mut ck, &dh_output)?;
-        println!("<- es finished, key = {}", k);
+        println!("<- es finished, key = {:?}", k);
 
         // <- e1
         let aead = Aes256Gcm::new(GenericArray::from_slice(&k));
