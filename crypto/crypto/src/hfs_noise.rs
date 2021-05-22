@@ -456,6 +456,7 @@ impl HfsNoiseConfig {
         let re1 = pqc_kem::PublicKey::try_from(re1.as_slice())
             .map_err(|_| HfsNoiseError::WrongPublicKeyReceived)?;
         mix_hash(&mut h, &encrypted_remote_e1);
+        println!("<- e1 finished.");
 
         // <- s
         let mut encrypted_remote_static = [0u8; x25519::PUBLIC_KEY_SIZE + AES_GCM_TAGLEN];
@@ -475,6 +476,7 @@ impl HfsNoiseConfig {
         let rs = x25519::PublicKey::try_from(rs.as_slice())
             .map_err(|_| HfsNoiseError::WrongPublicKeyReceived)?;
         mix_hash(&mut h, &encrypted_remote_static);
+        println!("<- s finished.")
 
         // <- ss
         let dh_output = self.private_key.diffie_hellman(&rs);
@@ -494,6 +496,7 @@ impl HfsNoiseConfig {
         let received_payload = aead.decrypt(nonce, ct_and_ad)
             .map_err(|_| HfsNoiseError::Decrypt)?;
         mix_hash(&mut h, received_encrypted_payload);
+        println!("<- payload finished.");
 
         // return 
         let handshake_state = HfsResponderHandshakeState { h, ck, rs, re, re1 };
