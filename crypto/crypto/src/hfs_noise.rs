@@ -272,10 +272,6 @@ impl HfsNoiseConfig {
         response_buffer.write(&e1_pub.to_bytes())
             .map_err(|_| HfsNoiseError::ResponseBufferTooSmall)?;
         
-        // -> es
-        let dh_output = e.diffie_hellman(&rs);
-        let k = mix_key(&mut ck, &dh_output)?;
-
         // -> s
         let aead = Aes256Gcm::new(GenericArray::from_slice(&k));
 
@@ -364,7 +360,7 @@ impl HfsNoiseConfig {
         let received_rekem1 = aead
             .decrypt(nonce, ct_and_ad)
             .map_err(|_| HfsNoiseError::Decrypt)?;
-        mix_hash(&mut h, &received_rekem1);
+        mix_hash(&mut h, &received_encrypted_rekem1);
         let rekem1 = pqc_kem::SharedSecretVecToArray(
             e1.decapsulate_from_raw(&pqc_kem::CiphertextVecToArray(received_rekem1)).clone().into_vec());
         let k = mix_key(&mut ck, &rekem1)?;
