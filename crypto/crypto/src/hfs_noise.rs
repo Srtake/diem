@@ -352,7 +352,7 @@ impl HfsNoiseConfig {
         // <- ekem1
         let aead = Aes256Gcm::new(GenericArray::from_slice(&k));
         let nonce = GenericArray::from_slice(&[0u8; AES_NONCE_SIZE]);
-        let mut received_encrypted_rekem1 = [0u8; pqc_kem::PUBLIC_KEY_LENGTH + AES_GCM_TAGLEN];
+        let mut received_encrypted_rekem1 = [0u8; pqc_kem::CIPHERTEXT_LENGTH + AES_GCM_TAGLEN];
         cursor.read_exact(&mut received_encrypted_rekem1)
             .map_err(|_| HfsNoiseError::MsgTooShort)?;
         let ct_and_ad = Payload {
