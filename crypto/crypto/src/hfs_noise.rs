@@ -271,7 +271,7 @@ impl HfsNoiseConfig {
         println!("[Initiator] encryption of e1 finished. ciphertext = {:?}, h = {:?}", encrypted_e1, h);
         
         mix_hash(&mut h, &encrypted_e1);
-        response_buffer.write(&e1_pub.to_bytes())
+        response_buffer.write(&encrypted_e1.to_bytes())
             .map_err(|_| HfsNoiseError::ResponseBufferTooSmall)?;
         
         // -> s
