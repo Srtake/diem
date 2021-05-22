@@ -476,7 +476,7 @@ impl HfsNoiseConfig {
         let rs = x25519::PublicKey::try_from(rs.as_slice())
             .map_err(|_| HfsNoiseError::WrongPublicKeyReceived)?;
         mix_hash(&mut h, &encrypted_remote_static);
-        println!("<- s finished.")
+        println!("<- s finished.");
 
         // <- ss
         let dh_output = self.private_key.diffie_hellman(&rs);
