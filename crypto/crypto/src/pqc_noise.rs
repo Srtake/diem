@@ -143,7 +143,7 @@ fn hkdf(ck: &[u8], dh_output: Option<&[u8]>) -> Result<(Vec<u8>, Vec<u8>), Noise
         Hkdf::<sha2::Sha256>::extract_then_expand(Some(ck), dh_output, None, 64)
     };
 
-    let hkdf_output = hkdf_output.map_err(|_| NoiseError::Hkdf)?;
+    let hkdf_output = hkdf_output.map_err(|_| PQNoiseError::Hkdf)?;
     let (k1, k2) = hkdf_output.split_at(32);
     Ok((k1.to_vec(), k2.to_vec()))
 }
@@ -153,7 +153,7 @@ fn mix_hash(h: &mut Vec<u8>, data: &[u8]) {
     *h = hash(h);
 }
 
-fn mix_key(ck: &mut Vec<u8>, dh_output: &[u8]) -> Result<Vec<u8>, NoiseError> {
+fn mix_key(ck: &mut Vec<u8>, dh_output: &[u8]) -> Result<Vec<u8>, PQNoiseError> {
     let (new_ck, k) = hkdf(ck, Some(dh_output))?;
     *ck = new_ck;
     Ok(k)
@@ -241,7 +241,7 @@ impl PQNoiseConfig {
 
         // -> e
         let (e, e_pub) = pqc_kem::keypair();
-        mix_hash(&mut h, e_pub.to_bytes());
+        mix_hash(&mut h, &e_pub.to_bytes());
         let mut response_buffer = Cursor::new(response_buffer);
         response_buffer
             .write(&e_pub.to_bytes())
@@ -324,7 +324,7 @@ impl PQNoiseConfig {
             aad: &h,
         };
         let received_rekem2 = aead
-            .decrypt(nonce, &received_encrypted_rekem2)
+            .decrypt(nonce, ct_and_ad)
             .map_err(|_| PQNoiseError::Decrypt)?;
         mix_hash(&mut h, &received_encrypted_rekem2);
         let rekem2 = pqc_kem::SharedSecretVecToArray(
@@ -350,7 +350,7 @@ impl PQNoiseConfig {
             .map_err(|_| PQNoiseError::Decrypt)?;
         mix_hash(&mut h, &received_encrypted_rskem2);
         let rskem2 = pqc_kem::SharedSecretVecToArray(
-            &self
+            self
                 .private_key
                 .decapsulate_from_raw(&pqc_kem::CiphertextVecToArray(received_rskem2))
                 .clone()
@@ -369,10 +369,10 @@ impl PQNoiseConfig {
         };
         let received_payload = aead
             .decrypt(nonce, ct_and_ad)
-            .map_err(|_| HfsNoiseError::Decrypt)?;
+            .map_err(|_| PQNoiseError::Decrypt)?;
         // split
         let (k1, k2) = hkdf(&ck, None)?;
-        let session = HfsNoiseSession::new(k1, k2, rs);
+        let session = PQNoiseSession::new(k1, k2, rs);
 
         //
         Ok((received_payload, session))
@@ -405,7 +405,7 @@ impl PQNoiseConfig {
     > {
         // checks
         if received_message.len() > MAX_SIZE_NOISE_MSG {
-            return Err(HfsNoiseError::ReceivedMsgTooLarge);
+            return Err(PQNoiseError::ReceivedMsgTooLarge);
         }
 
         // initialize
@@ -430,7 +430,7 @@ impl PQNoiseConfig {
             .map_err(|_| PQNoiseError::MsgTooShort)?;
         mix_hash(&mut h, &received_rskem1);
         let rskem1 = pqc_kem::SharedSecretVecToArray(
-            &self.private_key.decapsulate_from_raw(&pqc_kem::CiphertextVecToArray(received_rskem1)).clone().into_vec()
+            self.private_key.decapsulate_from_raw(&pqc_kem::CiphertextVecToArray(received_rskem1)).clone().into_vec()
         );
         let k = mix_key(&mut ck, &rskem1)?;
 
@@ -463,7 +463,7 @@ impl PQNoiseConfig {
         };
         let received_payload = aead
             .decrypt(nonce, ct_and_ad)
-            .map_err(|_| HfsNoiseError::Decrypt)?;
+            .map_err(|_| PQNoiseError::Decrypt)?;
 
         // return
         let handshake_state = PQResponderHandshakeState { h, ck, rs, re };
@@ -630,10 +630,10 @@ impl PQNoiseSession {
     pub fn write_message_in_place(&mut self, message: &mut [u8]) -> Result<Vec<u8>, NoiseError> {
         // checks
         if !self.valid {
-            return Err(NoiseError::SessionClosed);
+            return Err(PQNoiseError::SessionClosed);
         }
         if message.len() > MAX_SIZE_NOISE_MSG - AES_GCM_TAGLEN {
-            return Err(NoiseError::PayloadTooLarge);
+            return Err(PQNoiseError::PayloadTooLarge);
         }
 
         // encrypt in place
@@ -644,13 +644,13 @@ impl PQNoiseSession {
 
         let authentication_tag = aead
             .encrypt_in_place_detached(nonce, b"", message)
-            .map_err(|_| NoiseError::Encrypt)?;
+            .map_err(|_| PQNoiseError::Encrypt)?;
 
         // increment nonce
         self.write_nonce = self
             .write_nonce
             .checked_add(1)
-            .ok_or(NoiseError::NonceOverflow)?;
+            .ok_or(PQNoiseError::NonceOverflow)?;
 
         // return a subslice without the authentication tag
         Ok(authentication_tag.to_vec())
@@ -664,15 +664,15 @@ impl PQNoiseSession {
     ) -> Result<&'a [u8], NoiseError> {
         // checks
         if !self.valid {
-            return Err(NoiseError::SessionClosed);
+            return Err(PQNoiseError::SessionClosed);
         }
         if message.len() > MAX_SIZE_NOISE_MSG {
             self.valid = false;
-            return Err(NoiseError::ReceivedMsgTooLarge);
+            return Err(PQNoiseError::ReceivedMsgTooLarge);
         }
         if message.len() < AES_GCM_TAGLEN {
             self.valid = false;
-            return Err(NoiseError::ResponseBufferTooSmall);
+            return Err(PQNoiseError::ResponseBufferTooSmall);
         }
 
         // decrypt in place
@@ -687,14 +687,14 @@ impl PQNoiseSession {
         aead.decrypt_in_place_detached(nonce, b"", buffer, authentication_tag)
             .map_err(|_| {
                 self.valid = false;
-                NoiseError::Decrypt
+                PQNoiseError::Decrypt
             })?;
 
         // increment nonce
         self.read_nonce = self
             .read_nonce
             .checked_add(1)
-            .ok_or(NoiseError::NonceOverflow)?;
+            .ok_or(PQNoiseError::NonceOverflow)?;
 
         // return a subslice of the buffer representing the decrypted plaintext
         Ok(buffer)
