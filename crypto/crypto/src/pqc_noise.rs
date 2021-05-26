@@ -135,7 +135,7 @@ fn hash(data: &[u8]) -> Vec<u8> {
     sha2::Sha256::digest(data).to_vec()
 }
 
-fn hkdf(ck: &[u8], dh_output: Option<&[u8]>) -> Result<(Vec<u8>, Vec<u8>), NoiseError> {
+fn hkdf(ck: &[u8], dh_output: Option<&[u8]>) -> Result<(Vec<u8>, Vec<u8>), PQNoiseError> {
     let dh_output = dh_output.unwrap_or_else(|| &[]);
     let hkdf_output = if dh_output.is_empty() {
         Hkdf::<sha2::Sha256>::extract_then_expand_no_ikm(Some(ck), None, 64)
@@ -255,7 +255,7 @@ impl PQNoiseConfig {
         response_buffer
             .write(&skem1)
             .map_err(|_| PQNoiseError::Encapsulation)?;
-        let k = mix_key(&mut ck, &shared_secret);
+        let k = mix_key(&mut ck, &shared_secret)?;
 
         // -> s
         let aead = Aes256Gcm::new(GenericArray::from_slice(&k));
@@ -549,7 +549,7 @@ impl PQNoiseConfig {
 
         // split
         let (k1, k2) = hkdf(&ck, None)?;
-        let session = NoiseSession::new(k2, k1, rs);
+        let session = PQNoiseSession::new(k2, k1, rs);
 
         //
         Ok(session)
@@ -566,9 +566,9 @@ impl PQNoiseConfig {
     ) -> Result<
         (
             Vec<u8>,      // the payload the initiator sent
-            NoiseSession, // The created session
+            PQNoiseSession, // The created session
         ),
-        NoiseError,
+        PQNoiseError,
     > {
         let (_, handshake_state, received_payload) =
             self.parse_client_init_message(prologue, received_message)?;
@@ -627,7 +627,7 @@ impl PQNoiseSession {
 
     /// encrypts a message for the other peers (post-handshake)
     /// the function encrypts in place, and returns the authentication tag as result
-    pub fn write_message_in_place(&mut self, message: &mut [u8]) -> Result<Vec<u8>, NoiseError> {
+    pub fn write_message_in_place(&mut self, message: &mut [u8]) -> Result<Vec<u8>, PQNoiseError> {
         // checks
         if !self.valid {
             return Err(PQNoiseError::SessionClosed);
@@ -661,7 +661,7 @@ impl PQNoiseSession {
     pub fn read_message_in_place<'a>(
         &mut self,
         message: &'a mut [u8],
-    ) -> Result<&'a [u8], NoiseError> {
+    ) -> Result<&'a [u8], PQNoiseError> {
         // checks
         if !self.valid {
             return Err(PQNoiseError::SessionClosed);
@@ -701,7 +701,7 @@ impl PQNoiseSession {
     }
 }
 
-impl std::fmt::Debug for NoiseSession {
+impl std::fmt::Debug for PQNoiseSession {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "NoiseSession[...]")
     }
