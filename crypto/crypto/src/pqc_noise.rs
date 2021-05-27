@@ -417,6 +417,7 @@ impl PQNoiseConfig {
         let mut cursor = Cursor::new(received_message);
 
         // <- e
+        println!("[parse_client_init_message] <- e");
         let mut re = [0u8; pqc_kem::PUBLIC_KEY_LENGTH];
         cursor
             .read_exact(&mut re)
@@ -425,6 +426,7 @@ impl PQNoiseConfig {
         let re = pqc_kem::PublicKey::from(re);
 
         // <- skem1
+        println!("[parse_client_init_message] <- skem1");
         let mut received_rskem1 = [0u8; pqc_kem::CIPHERTEXT_LENGTH];
         cursor
             .read_exact(&mut received_rskem1)
@@ -439,6 +441,7 @@ impl PQNoiseConfig {
         let k = mix_key(&mut ck, &rskem1)?;
 
         // <- s
+        println!("[parse_client_init_message] <- s");
         let mut encrypted_remote_static = [0u8; pqc_kem::PUBLIC_KEY_LENGTH + AES_GCM_TAGLEN];
         cursor
             .read_exact(&mut encrypted_remote_static)
