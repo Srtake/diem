@@ -56,8 +56,10 @@ pub fn SharedSecretVecToArray(v: Vec<u8>) -> [u8; SHARED_SECRET_LENGTH] {
     arr
 }
 
+/// Errors
 #[derive(Debug, Error)]
 pub enum PQCKemError {
+    /// Length of ciphertext array is not correct
     #[error("Length of ciphertext array is not correct.")]
     CiphertextLengthNotCorrect,
 }
