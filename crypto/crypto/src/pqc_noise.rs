@@ -430,7 +430,7 @@ impl PQNoiseConfig {
             .map_err(|_| PQNoiseError::MsgTooShort)?;
         mix_hash(&mut h, &received_rskem1);
         let rskem1 = pqc_kem::SharedSecretVecToArray(
-            self.private_key.decapsulate_from_raw(&pqc_kem::CiphertextVecToArray(received_rskem1)).clone().into_vec()
+            self.private_key.decapsulate_from_raw(&received_rskem1).clone().into_vec()
         );
         let k = mix_key(&mut ck, &rskem1)?;
 
@@ -511,7 +511,7 @@ impl PQNoiseConfig {
         mix_hash(&mut h, &encrypted_ekem2);
         response_buffer.write(&encrypted_ekem2)
             .map_err(|_| PQNoiseError::ResponseBufferTooSmall)?;
-        let k = mix_key(&mut ck, &shared_secret);
+        let k = mix_key(&mut ck, &shared_secret)?;
         
         // -> skem2
         let (skem2, shared_secret) = rs.encapsulate();
@@ -528,7 +528,7 @@ impl PQNoiseConfig {
         mix_hash(&mut h, &encrypted_skem2);
         response_buffer.write(&encrypted_skem2)
             .map_err(|_| PQNoiseError::ResponseBufferTooSmall)?;
-        let k = mix_key(&mut ck, &shared_secret);
+        let k = mix_key(&mut ck, &shared_secret)?;
 
         // -> payload
         let aead = Aes256Gcm::new(GenericArray::from_slice(&k));
