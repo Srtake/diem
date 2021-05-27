@@ -477,6 +477,7 @@ impl PQNoiseConfig {
         let received_payload = aead
             .decrypt(nonce, ct_and_ad)
             .map_err(|_| PQNoiseError::Decrypt)?;
+        mix_hash(&mut h, received_encrypted_payload);
 
         // return
         let handshake_state = PQResponderHandshakeState {
