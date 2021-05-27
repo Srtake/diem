@@ -316,7 +316,6 @@ impl PQNoiseConfig {
         } = handshake_state;
 
         // <- ekem2
-        println!("[finalize_connection] <- ekem2");
         let aead = Aes256Gcm::new(GenericArray::from_slice(&ck));
         let nonce = GenericArray::from_slice(&[0u8; AES_NONCE_SIZE]);
         let mut received_encrypted_rekem2 = [0u8; pqc_kem::CIPHERTEXT_LENGTH + AES_GCM_TAGLEN];
@@ -324,8 +323,6 @@ impl PQNoiseConfig {
         cursor
             .read_exact(&mut received_encrypted_rekem2)
             .map_err(|_| PQNoiseError::MsgTooShort)?;
-        println!("[finalize_connection] h = {:?}", h.clone());
-        println!("[finalize_connection] encrypted_ekem2 = {:?}", received_encrypted_rekem2.clone());
         let ct_and_ad = Payload {
             msg: &received_encrypted_rekem2,
             aad: &h,
@@ -342,7 +339,6 @@ impl PQNoiseConfig {
         let k = mix_key(&mut ck, &rekem2)?;
 
         // <- skem2
-        println!("[finalize_connection] <- skem2");
         let aead = Aes256Gcm::new(GenericArray::from_slice(&k));
         let nonce = GenericArray::from_slice(&[0u8; AES_NONCE_SIZE]);
         let mut received_encrypted_rskem2 = [0u8; pqc_kem::CIPHERTEXT_LENGTH + AES_GCM_TAGLEN];
@@ -529,8 +525,6 @@ impl PQNoiseConfig {
         let encrypted_ekem2 = aead
             .encrypt(nonce, msg_and_ad)
             .map_err(|_| PQNoiseError::Encrypt)?;
-        println!("[respond_to_client] h = {:?}", h.clone());
-        println!("[respond_to_client] encrypted_ekem2 = {:?}", encrypted_ekem2.clone());
         mix_hash(&mut h, &encrypted_ekem2);
         response_buffer
             .write(&encrypted_ekem2)
