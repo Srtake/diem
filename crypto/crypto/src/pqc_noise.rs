@@ -444,7 +444,7 @@ impl PQNoiseConfig {
         // <- s
         println!("[parse_client_init_message] <- s");
         let offset = cursor.position() as usize;
-        let mut encrypted_remote_static = &cursor.into_inner()[offset..];
+        let mut encrypted_remote_static = &cursor.clone().into_inner()[offset..];
         println!("[parse_client_init_message] s = {:?}", encrypted_remote_static.clone());
         // let mut encrypted_remote_static = [0u8; pqc_kem::PUBLIC_KEY_LENGTH + AES_GCM_TAGLEN];
         // cursor
