@@ -316,6 +316,7 @@ impl PQNoiseConfig {
         } = handshake_state;
 
         // <- ekem2
+        println!("[finalize_connection] <- ekem2");
         let aead = Aes256Gcm::new(GenericArray::from_slice(&ck));
         let nonce = GenericArray::from_slice(&[0u8; AES_NONCE_SIZE]);
         let mut received_encrypted_rekem2 = [0u8; pqc_kem::CIPHERTEXT_LENGTH + AES_GCM_TAGLEN];
@@ -339,6 +340,7 @@ impl PQNoiseConfig {
         let k = mix_key(&mut ck, &rekem2)?;
 
         // <- skem2
+        println!("[finalize_connection] <- skem2");
         let aead = Aes256Gcm::new(GenericArray::from_slice(&k));
         let nonce = GenericArray::from_slice(&[0u8; AES_NONCE_SIZE]);
         let mut received_encrypted_rskem2 = [0u8; pqc_kem::CIPHERTEXT_LENGTH + AES_GCM_TAGLEN];
@@ -421,7 +423,6 @@ impl PQNoiseConfig {
         let mut cursor = Cursor::new(received_message);
 
         // <- e
-        println!("[parse_client_init_message] <- e");
         let mut re = [0u8; pqc_kem::PUBLIC_KEY_LENGTH];
         cursor
             .read_exact(&mut re)
@@ -430,7 +431,6 @@ impl PQNoiseConfig {
         let re = pqc_kem::PublicKey::from(re);
 
         // <- skem1
-        println!("[parse_client_init_message] <- skem1");
         let mut received_rskem1 = [0u8; pqc_kem::CIPHERTEXT_LENGTH];
         cursor
             .read_exact(&mut received_rskem1)
@@ -445,10 +445,6 @@ impl PQNoiseConfig {
         let k = mix_key(&mut ck, &rskem1)?;
 
         // <- s
-        println!("[parse_client_init_message] <- s");
-        // let offset = cursor.position() as usize;
-        // let mut encrypted_remote_static = &cursor.clone().into_inner()[offset..];
-        // println!("[parse_client_init_message] s = {:?}", encrypted_remote_static.clone());
         let mut encrypted_remote_static = [0u8; pqc_kem::PUBLIC_KEY_LENGTH + AES_GCM_TAGLEN];
         cursor
             .read_exact(&mut encrypted_remote_static)
@@ -468,7 +464,6 @@ impl PQNoiseConfig {
         mix_hash(&mut h, &encrypted_remote_static);
 
         // <- payload
-        println!("[parse_client_init_message] <- payload");
         let offset = cursor.position() as usize;
         let received_encrypted_payload = &cursor.into_inner()[offset..];
         let aead = Aes256Gcm::new(GenericArray::from_slice(&k));
