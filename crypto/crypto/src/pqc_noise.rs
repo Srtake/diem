@@ -461,6 +461,7 @@ impl PQNoiseConfig {
         mix_hash(&mut h, &encrypted_remote_static);
 
         // <- payload
+        println!("[parse_client_init_message] <- payload");
         let offset = cursor.position() as usize;
         let received_encrypted_payload = &cursor.into_inner()[offset..];
         let aead = Aes256Gcm::new(GenericArray::from_slice(&k));
