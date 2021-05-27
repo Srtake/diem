@@ -241,6 +241,7 @@ impl PQNoiseConfig {
 
         // -> e
         let (e, e_pub) = pqc_kem::keypair();
+        println!("[initiate_connection] e = {:?}", e_pub.clone());
         mix_hash(&mut h, &e_pub.to_bytes());
         let mut response_buffer = Cursor::new(response_buffer);
         response_buffer
@@ -422,6 +423,7 @@ impl PQNoiseConfig {
         cursor
             .read_exact(&mut re)
             .map_err(|_| PQNoiseError::MsgTooShort)?;
+        println!("[parse_client_init_message] e = {:?}", re.clone());
         mix_hash(&mut h, &re);
         let re = pqc_kem::PublicKey::from(re);
 
