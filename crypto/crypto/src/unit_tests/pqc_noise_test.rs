@@ -14,8 +14,8 @@ fn simple_handshake() {
     // setup peers
     let (initiator_private, initiator_public) = pqc_kem::keypair();
     let (responder_private, responder_public) = pqc_kem::keypair();
-    let initiator = PQNoiseConfig::new(initiator_private, initiator_public);
-    let responder = PQNoiseConfig::new(responder_private, responder_public);
+    let initiator = PQNoiseConfig::new(initiator_private, initiator_public.clone());
+    let responder = PQNoiseConfig::new(responder_private, responder_public.clone());
 
     // test the two APIs
     for i in 0..2 {
@@ -24,7 +24,7 @@ fn simple_handshake() {
         let mut first_message = vec![0u8; handshake_init_msg_len(payload1.len())];
         let initiator_state = initiator.initiate_connection(
             prologue,
-            responder_public.clone(),
+            responder_public,
             Some(payload1),
             &mut first_message,
         ).unwrap();
