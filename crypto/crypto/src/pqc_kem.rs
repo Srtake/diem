@@ -13,30 +13,43 @@ use thiserror::Error;
 
 pub use oqs;
 
+/// Current used KEM algorithm
 const CURR_ALGORITHM: oqs::kem::Algorithm = oqs::kem::Algorithm::Kyber512;
+
+/// length of secret key
 pub const SECRET_KEY_LENGTH: usize = 1632;
+
+/// length of public key
 pub const PUBLIC_KEY_LENGTH: usize = 800;
+
+/// length of KEM ciphertext
 pub const CIPHERTEXT_LENGTH: usize = 768;
+
+/// length of shared secret
 pub const SHARED_SECRET_LENGTH: usize = 32;
 
+/// convert a secret key vector to an array
 pub fn secretKeyVecToArray(v: Vec<u8>) -> [u8; SECRET_KEY_LENGTH] {
     let mut arr = [0u8; SECRET_KEY_LENGTH];
     arr.iter_mut().set_from(v.iter().cloned());
     arr
 }
 
+/// convert a public key vector to an array
 pub fn publicKeyVecToArray(v: Vec<u8>) -> [u8; PUBLIC_KEY_LENGTH] {
     let mut arr = [0u8; PUBLIC_KEY_LENGTH];
     arr.iter_mut().set_from(v.iter().cloned());
     arr
 }
 
+/// convert a ciphertext vector to an array
 pub fn CiphertextVecToArray(v: Vec<u8>) -> [u8; CIPHERTEXT_LENGTH] {
     let mut arr = [0u8; CIPHERTEXT_LENGTH];
     arr.iter_mut().set_from(v.iter().cloned());
     arr
 }
 
+/// convert a shared secret vector to an array
 pub fn SharedSecretVecToArray(v: Vec<u8>) -> [u8; SHARED_SECRET_LENGTH] {
     let mut arr = [0u8; SHARED_SECRET_LENGTH];
     arr.iter_mut().set_from(v.iter().cloned());
