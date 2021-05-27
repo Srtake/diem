@@ -41,12 +41,12 @@ fn test_pqc() {
     let (kem_ct, b_kem_ss) = kem_pk.encapsulate();
     let signature = b_sig_sk.sign_arbitrary_message(&(CiphertextVecToArray(kem_ct.clone().into_vec())));
     println!("[test_pqc] B -> A signature = {}", hex::encode(signature.to_bytes()));
-    println!("[test_pqc] kem_ct = {}", hex::encode(kem_ct.to_bytes()));
-    println!("[test_pqc] b_kem_ss = {}", hex::encode(b_kem_ss.to_bytes()));
+    println!("[test_pqc] kem_ct = {}", hex::encode(CiphertextVecToArray(kem_ct.clone().into_vec())));
+    println!("[test_pqc] b_kem_ss = {}", hex::encode(SharedSecretVecToArray(b_kem_ss.clone().into_vec())));
 
     // A verifies, decapsulates, now both have kem_ss
     signature.verify_arbitrary_msg(&(CiphertextVecToArray(kem_ct.clone().into_vec())), &b_sig_pk);
     let a_kem_ss = kem_sk.decapsulate(&kem_ct);
-    println!("[test_pqc] a_kem_ss = {}", hex::encode(a_kem_ss.to_bytes()));
+    println!("[test_pqc] a_kem_ss = {}", hex::encode(SharedSecretVecToArray(a_kem_ss.clone().into_vec())));
     assert_eq!(a_kem_ss, b_kem_ss);
 }
