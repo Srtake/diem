@@ -47,22 +47,26 @@ pub const fn decrypted_len(ciphertext_len: usize) -> usize {
 pub const fn handshake_init_msg_len(payload_len: usize) -> usize {
     // e
     let e_len = pqc_kem::PUBLIC_KEY_LENGTH;
+    // skem1
+    let skem1_len = pqc_kem::CIPHERTEXT_LENGTH;
     // encrypted s
     let enc_s_len = encrypted_len(pqc_kem::PUBLIC_KEY_LENGTH);
     // encrypted payload
     let enc_payload_len = encrypted_len(payload_len);
     //
-    e_len + enc_s_len + enc_payload_len
+    e_len + skem1_len + enc_s_len + enc_payload_len
 }
 
 /// A handy const fn to get the size of the second handshake message
 pub const fn handshake_resp_msg_len(payload_len: usize) -> usize {
-    // e
-    let e_len = pqc_kem::PUBLIC_KEY_LENGTH;
+    // e_kem2
+    let ekem2_len = encrypted_len(pqc_kem::CIPHERTEXT_LENGTH);
+    // s_kem2
+    let skem2_len = encrypted_len(pqc_kem::CIPHERTEXT_LENGTH);
     // encrypted payload
     let enc_payload_len = encrypted_len(payload_len);
     //
-    e_len + enc_payload_len
+    ekem2_len + skem2_len + enc_payload_len
 }
 
 /// This implementation relies on the fact that the hash function used has a 256-bit output
@@ -268,7 +272,6 @@ impl PQNoiseConfig {
             .encrypt(nonce, msg_and_ad)
             .map_err(|_| PQNoiseError::Encrypt)?;
         mix_hash(&mut h, &encrypted_static);
-        println!("[initiate_connection] encrypted_static = {:?}", encrypted_static.clone());
         response_buffer
             .write(&encrypted_static)
             .map_err(|_| PQNoiseError::ResponseBufferTooSmall)?;
@@ -443,13 +446,13 @@ impl PQNoiseConfig {
 
         // <- s
         println!("[parse_client_init_message] <- s");
-        let offset = cursor.position() as usize;
-        let mut encrypted_remote_static = &cursor.clone().into_inner()[offset..];
-        println!("[parse_client_init_message] s = {:?}", encrypted_remote_static.clone());
-        // let mut encrypted_remote_static = [0u8; pqc_kem::PUBLIC_KEY_LENGTH + AES_GCM_TAGLEN];
-        // cursor
-        //     .read_exact(&mut encrypted_remote_static)
-        //     .map_err(|_| PQNoiseError::MsgTooShort)?;
+        // let offset = cursor.position() as usize;
+        // let mut encrypted_remote_static = &cursor.clone().into_inner()[offset..];
+        // println!("[parse_client_init_message] s = {:?}", encrypted_remote_static.clone());
+        let mut encrypted_remote_static = [0u8; pqc_kem::PUBLIC_KEY_LENGTH + AES_GCM_TAGLEN];
+        cursor
+            .read_exact(&mut encrypted_remote_static)
+            .map_err(|_| PQNoiseError::MsgTooShort)?;
         let aead = Aes256Gcm::new(GenericArray::from_slice(&k));
 
         let nonce = GenericArray::from_slice(&[0u8; AES_NONCE_SIZE]);
