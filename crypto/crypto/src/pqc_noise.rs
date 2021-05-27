@@ -251,7 +251,6 @@ impl PQNoiseConfig {
         let (skem1, shared_secret) = rs.encapsulate();
         let skem1 = pqc_kem::CiphertextVecToArray(skem1.clone().into_vec());
         let shared_secret = pqc_kem::SharedSecretVecToArray(shared_secret.clone().into_vec());
-        println!("[initiate_connection] skem1: {:?}", skem1.clone());
         mix_hash(&mut h, &skem1);
         response_buffer
             .write(&skem1)
@@ -269,6 +268,7 @@ impl PQNoiseConfig {
             .encrypt(nonce, msg_and_ad)
             .map_err(|_| PQNoiseError::Encrypt)?;
         mix_hash(&mut h, &encrypted_static);
+        println!("[initiate_connection] encrypted_static = {:?}", encrypted_static.clone());
         response_buffer
             .write(&encrypted_static)
             .map_err(|_| PQNoiseError::ResponseBufferTooSmall)?;
@@ -432,7 +432,6 @@ impl PQNoiseConfig {
         cursor
             .read_exact(&mut received_rskem1)
             .map_err(|_| PQNoiseError::MsgTooShort)?;
-        println!("[parse_client_init_message] skem1: {:?}", received_rskem1.clone());
         mix_hash(&mut h, &received_rskem1);
         let rskem1 = pqc_kem::SharedSecretVecToArray(
             self.private_key
@@ -444,10 +443,13 @@ impl PQNoiseConfig {
 
         // <- s
         println!("[parse_client_init_message] <- s");
-        let mut encrypted_remote_static = [0u8; pqc_kem::PUBLIC_KEY_LENGTH + AES_GCM_TAGLEN];
-        cursor
-            .read_exact(&mut encrypted_remote_static)
-            .map_err(|_| PQNoiseError::MsgTooShort)?;
+        let offset = cursor.position() as usize;
+        let mut encrypted_remote_static = &cursor.into_inner()[offset..];
+        println!("[parse_client_init_message] s = {:?}", encrypted_remote_static.clone());
+        // let mut encrypted_remote_static = [0u8; pqc_kem::PUBLIC_KEY_LENGTH + AES_GCM_TAGLEN];
+        // cursor
+        //     .read_exact(&mut encrypted_remote_static)
+        //     .map_err(|_| PQNoiseError::MsgTooShort)?;
         let aead = Aes256Gcm::new(GenericArray::from_slice(&k));
 
         let nonce = GenericArray::from_slice(&[0u8; AES_NONCE_SIZE]);
