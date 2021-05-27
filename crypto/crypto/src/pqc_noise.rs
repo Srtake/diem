@@ -317,6 +317,7 @@ impl PQNoiseConfig {
 
         // <- ekem2
         println!("[finalize_connection] <- ekem2");
+        println!("[finalize_connection] ck = {:?}", ck.clone());
         let aead = Aes256Gcm::new(GenericArray::from_slice(&ck));
         let nonce = GenericArray::from_slice(&[0u8; AES_NONCE_SIZE]);
         let mut received_encrypted_rekem2 = [0u8; pqc_kem::CIPHERTEXT_LENGTH + AES_GCM_TAGLEN];
@@ -513,6 +514,7 @@ impl PQNoiseConfig {
         } = handshake_state;
 
         // -> ekem2
+        println!("[respond_to_client] ck = {:?}", ck.clone());
         let mut response_buffer = Cursor::new(response_buffer);
         let (ekem2, shared_secret) = re.encapsulate();
         let ekem2 = pqc_kem::CiphertextVecToArray(ekem2.clone().into_vec());
