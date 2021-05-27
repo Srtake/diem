@@ -241,7 +241,6 @@ impl PQNoiseConfig {
 
         // -> e
         let (e, e_pub) = pqc_kem::keypair();
-        println!("[initiate_connection] e = {:?}", e_pub.to_bytes());
         mix_hash(&mut h, &e_pub.to_bytes());
         let mut response_buffer = Cursor::new(response_buffer);
         response_buffer
@@ -252,6 +251,7 @@ impl PQNoiseConfig {
         let (skem1, shared_secret) = rs.encapsulate();
         let skem1 = pqc_kem::CiphertextVecToArray(skem1.clone().into_vec());
         let shared_secret = pqc_kem::SharedSecretVecToArray(shared_secret.clone().into_vec());
+        println!("[initiate_connection] skem1: {:?}", skem1.clone());
         mix_hash(&mut h, &skem1);
         response_buffer
             .write(&skem1)
@@ -423,7 +423,6 @@ impl PQNoiseConfig {
         cursor
             .read_exact(&mut re)
             .map_err(|_| PQNoiseError::MsgTooShort)?;
-        println!("[parse_client_init_message] e = {:?}", re.clone());
         mix_hash(&mut h, &re);
         let re = pqc_kem::PublicKey::from(re);
 
@@ -433,6 +432,7 @@ impl PQNoiseConfig {
         cursor
             .read_exact(&mut received_rskem1)
             .map_err(|_| PQNoiseError::MsgTooShort)?;
+        println!("[parse_client_init_message] skem1: {:?}", received_rskem1.clone());
         mix_hash(&mut h, &received_rskem1);
         let rskem1 = pqc_kem::SharedSecretVecToArray(
             self.private_key
