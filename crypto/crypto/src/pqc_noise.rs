@@ -241,7 +241,7 @@ impl PQNoiseConfig {
 
         // -> e
         let (e, e_pub) = pqc_kem::keypair();
-        println!("[initiate_connection] e = {:?}", e_pub.clone());
+        println!("[initiate_connection] e = {:?}", e_pub.to_bytes());
         mix_hash(&mut h, &e_pub.to_bytes());
         let mut response_buffer = Cursor::new(response_buffer);
         response_buffer
