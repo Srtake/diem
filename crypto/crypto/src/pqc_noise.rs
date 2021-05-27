@@ -350,8 +350,7 @@ impl PQNoiseConfig {
             .map_err(|_| PQNoiseError::Decrypt)?;
         mix_hash(&mut h, &received_encrypted_rskem2);
         let rskem2 = pqc_kem::SharedSecretVecToArray(
-            self
-                .private_key
+            self.private_key
                 .decapsulate_from_raw(&pqc_kem::CiphertextVecToArray(received_rskem2))
                 .clone()
                 .into_vec(),
@@ -419,24 +418,30 @@ impl PQNoiseConfig {
 
         // <- e
         let mut re = [0u8; pqc_kem::PUBLIC_KEY_LENGTH];
-        cursor.read_exact(&mut re)
+        cursor
+            .read_exact(&mut re)
             .map_err(|_| PQNoiseError::MsgTooShort)?;
         mix_hash(&mut h, &re);
         let re = pqc_kem::PublicKey::from(re);
 
         // <- skem1
         let mut received_rskem1 = [0u8; pqc_kem::CIPHERTEXT_LENGTH];
-        cursor.read_exact(&mut received_rskem1)
+        cursor
+            .read_exact(&mut received_rskem1)
             .map_err(|_| PQNoiseError::MsgTooShort)?;
         mix_hash(&mut h, &received_rskem1);
         let rskem1 = pqc_kem::SharedSecretVecToArray(
-            self.private_key.decapsulate_from_raw(&received_rskem1).clone().into_vec()
+            self.private_key
+                .decapsulate_from_raw(&received_rskem1)
+                .clone()
+                .into_vec(),
         );
         let k = mix_key(&mut ck, &rskem1)?;
 
         // <- s
         let mut encrypted_remote_static = [0u8; pqc_kem::PUBLIC_KEY_LENGTH + AES_GCM_TAGLEN];
-        cursor.read_exact(&mut encrypted_remote_static)
+        cursor
+            .read_exact(&mut encrypted_remote_static)
             .map_err(|_| PQNoiseError::MsgTooShort)?;
         let aead = Aes256Gcm::new(GenericArray::from_slice(&k));
 
@@ -466,7 +471,12 @@ impl PQNoiseConfig {
             .map_err(|_| PQNoiseError::Decrypt)?;
 
         // return
-        let handshake_state = PQResponderHandshakeState { h, ck, rs.clone(), re };
+        let handshake_state = PQResponderHandshakeState {
+            h,
+            ck,
+            rs: rs.clone(),
+            re,
+        };
         Ok((rs, handshake_state, received_payload))
     }
 
@@ -507,13 +517,14 @@ impl PQNoiseConfig {
             aad: &h,
         };
         let nonce = GenericArray::from_slice(&[0u8; AES_NONCE_SIZE]);
-        let encrypted_ekem2 = aead.encrypt(nonce, msg_and_ad)
+        let encrypted_ekem2 = aead
+            .encrypt(nonce, msg_and_ad)
             .map_err(|_| PQNoiseError::Encrypt)?;
         mix_hash(&mut h, &encrypted_ekem2);
-        response_buffer.write(&encrypted_ekem2)
+        response_buffer
+            .write(&encrypted_ekem2)
             .map_err(|_| PQNoiseError::ResponseBufferTooSmall)?;
         let k = mix_key(&mut ck, &shared_secret)?;
-        
         // -> skem2
         let (skem2, shared_secret) = rs.encapsulate();
         let skem2 = pqc_kem::CiphertextVecToArray(skem2.clone().into_vec());
@@ -524,10 +535,12 @@ impl PQNoiseConfig {
             aad: &h,
         };
         let nonce = GenericArray::from_slice(&[0u8; AES_NONCE_SIZE]);
-        let encrypted_skem2 = aead.encrypt(nonce, msg_and_ad)
+        let encrypted_skem2 = aead
+            .encrypt(nonce, msg_and_ad)
             .map_err(|_| PQNoiseError::Encrypt)?;
         mix_hash(&mut h, &encrypted_skem2);
-        response_buffer.write(&encrypted_skem2)
+        response_buffer
+            .write(&encrypted_skem2)
             .map_err(|_| PQNoiseError::ResponseBufferTooSmall)?;
         let k = mix_key(&mut ck, &shared_secret)?;
 
@@ -566,7 +579,7 @@ impl PQNoiseConfig {
         response_buffer: &mut [u8],
     ) -> Result<
         (
-            Vec<u8>,      // the payload the initiator sent
+            Vec<u8>,        // the payload the initiator sent
             PQNoiseSession, // The created session
         ),
         PQNoiseError,
