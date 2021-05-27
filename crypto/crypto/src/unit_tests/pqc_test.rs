@@ -1,7 +1,7 @@
 use crate as diem_crypto;
 use crate::{
     pqc_sig::{PQCPrivateKey, PQCPublicKey, PQCSignature, curr_alg, keypair as sig_keypair},
-    pqc_kem::{PrivateKey, PublicKey, keypair as kem_keypair, CiphertextVecToArray},
+    pqc_kem::{PrivateKey, PublicKey, keypair as kem_keypair, CiphertextVecToArray, SharedSecretVecToArray},
     test_utils::{random_serializable_struct, uniform_keypair_strategy},
     traits::*,
 };
