@@ -24,7 +24,7 @@ fn simple_handshake() {
         let mut first_message = vec![0u8; handshake_init_msg_len(payload1.len())];
         let initiator_state = initiator.initiate_connection(
             prologue,
-            responder_public,
+            responder_public.clone(),
             Some(payload1),
             &mut first_message,
         ).unwrap();
@@ -33,7 +33,7 @@ fn simple_handshake() {
         let mut second_message = vec![0u8; handshake_resp_msg_len(payload2.len())];
 
         // responder parses the first message and responds
-        let responder_session = if i == 0 {
+        let mut responder_session = if i == 0 {
             let (received_payload, responder_session) = responder
                 .respond_to_client_and_finalize(
                     prologue,
@@ -42,7 +42,7 @@ fn simple_handshake() {
                     &mut second_message,
                 ).unwrap();
             let remote_static = responder_session.get_remote_static();
-            assert_eq!(remote_static, initiator_public);
+            assert_eq!(remote_static, initiator_public.clone());
             assert_eq!(received_payload, b"payload1");
             responder_session
         } else {

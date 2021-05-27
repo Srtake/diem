@@ -208,7 +208,7 @@ impl PQNoiseConfig {
 
     /// Handy getter to access the configuration's public key
     pub fn public_key(&self) -> pqc_kem::PublicKey {
-        self.public_key
+        self.public_key.clone()
     }
 
     //
@@ -466,7 +466,7 @@ impl PQNoiseConfig {
             .map_err(|_| PQNoiseError::Decrypt)?;
 
         // return
-        let handshake_state = PQResponderHandshakeState { h, ck, rs, re };
+        let handshake_state = PQResponderHandshakeState { h, ck, rs.clone(), re };
         Ok((rs, handshake_state, received_payload))
     }
 
@@ -497,6 +497,7 @@ impl PQNoiseConfig {
         } = handshake_state;
 
         // -> ekem2
+        let mut response_buffer = Cursor::new(response_buffer);
         let (ekem2, shared_secret) = re.encapsulate();
         let ekem2 = pqc_kem::CiphertextVecToArray(ekem2.clone().into_vec());
         let shared_secret = pqc_kem::SharedSecretVecToArray(shared_secret.clone().into_vec());
@@ -622,7 +623,7 @@ impl PQNoiseSession {
 
     /// obtain remote static public key
     pub fn get_remote_static(&self) -> pqc_kem::PublicKey {
-        self.remote_public_key
+        self.remote_public_key.clone()
     }
 
     /// encrypts a message for the other peers (post-handshake)
