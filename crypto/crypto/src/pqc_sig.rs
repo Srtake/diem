@@ -18,23 +18,33 @@ use itertools::Itertools;
 
 pub use oqs;
 
+/// current used signature algorithm
 const CURR_ALGORITHM: oqs::sig::Algorithm = oqs::sig::Algorithm::Dilithium2;
+
+/// length of secret key
 pub const SECRET_KEY_LENGTH: usize = 2528;
+
+/// length of public key
 pub const PUBLIC_KEY_LENGTH: usize = 1312;
+
+/// length of signature
 pub const SIGNATURE_LENGTH: usize = 2420;
 
+/// convert a secret key vector to an array
 pub fn secretKeyVecToArray(v: Vec<u8>) -> [u8; SECRET_KEY_LENGTH] {
     let mut arr = [0u8; SECRET_KEY_LENGTH];
     arr.iter_mut().set_from(v.iter().cloned());
     arr
 }
 
+/// convert a public key vector to an array
 pub fn publicKeyVecToArray(v: Vec<u8>) -> [u8; PUBLIC_KEY_LENGTH] {
     let mut arr = [0u8; PUBLIC_KEY_LENGTH];
     arr.iter_mut().set_from(v.iter().cloned());
     arr
 }
 
+/// convert a signature vector to an array
 pub fn signatureVecToArray(v: Vec<u8>) -> [u8; SIGNATURE_LENGTH] {
     let mut arr = [0u8; SIGNATURE_LENGTH];
     arr.iter_mut().set_from(v.iter().cloned());

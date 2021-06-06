@@ -78,7 +78,7 @@ const _: [(); 32] = [(); HashValue::LENGTH];
 // ------
 //
 
-// A NoiseError enum represents the different types of error that noise can return to users of the crate
+/// A NoiseError enum represents the different types of error that noise can return to users of the crate
 #[derive(Debug, Error)]
 pub enum PQNoiseError {
     /// the received message is too short to contain the expected data
