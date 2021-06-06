@@ -176,7 +176,7 @@ pub fn fuzz_post_handshake(data: &[u8]) {
 
     // setup a NoiseStream with a dummy state
     let noise_session = HfsNoiseSession::new_for_testing();
-    let mut peer = HfsNoiseStream::new(fake_socket, noise_session);
+    let mut peer = NoiseStream::new(fake_socket, noise_session);
 
     // read fuzz data
     let _ = block_on(async move {

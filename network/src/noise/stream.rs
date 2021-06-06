@@ -274,10 +274,10 @@ where
                         {
                             Ok(authentication_tag) => {
                                 // append the authentication tag
-                                self.buffers.write_buffer[*offset..*offset + noise::AES_GCM_TAGLEN]
+                                self.buffers.write_buffer[*offset..*offset + hfs_noise::AES_GCM_TAGLEN]
                                     .copy_from_slice(&authentication_tag);
                                 // calculate frame length
-                                let frame_len = noise::encrypted_len(*offset);
+                                let frame_len = hfs_noise::encrypted_len(*offset);
                                 let frame_len = frame_len
                                     .try_into()
                                     .expect("offset should be able to fit in u16");
@@ -559,5 +559,178 @@ mod test {
     use rand::SeedableRng as _;
     use std::io;
 
-    
+    /// helper to setup two testing peers
+    fn build_peers() -> (
+        (NoiseUpgrader, x25519::PublicKey),
+        (NoiseUpgrader, x25519::PublicKey),
+    ) {
+        let mut rng = ::rand::rngs::StdRng::from_seed(TEST_SEED);
+
+        let client_private = x25519::PrivateKey::generate(&mut rng);
+        let client_public = client_private.public_key();
+        let client_peer_id = diem_types::account_address::from_identity_public_key(client_public);
+
+        let server_private = x25519::PrivateKey::generate(&mut rng);
+        let server_public = server_private.public_key();
+        let server_peer_id = diem_types::account_address::from_identity_public_key(server_public);
+
+        let client = NoiseUpgrader::new(
+            NetworkContext::mock_with_peer_id(client_peer_id),
+            client_private,
+            HandshakeAuthMode::server_only(),
+        );
+        let server = NoiseUpgrader::new(
+            NetworkContext::mock_with_peer_id(server_peer_id),
+            server_private,
+            HandshakeAuthMode::server_only(),
+        );
+
+        ((client, client_public), (server, server_public))
+    }
+
+    /// helper to perform a noise handshake with two peers
+    fn perform_handshake(
+        client: NoiseUpgrader,
+        server_public_key: x25519::PublicKey,
+        server: NoiseUpgrader,
+    ) -> (NoiseStream<MemorySocket>, NoiseStream<MemorySocket>) {
+        // create an in-memory socket for testing
+        let (dialer_socket, listener_socket) = MemorySocket::new_pair();
+
+        // perform the handshake
+        let (client_session, server_session) = block_on(join(
+            client.upgrade_outbound(dialer_socket, server_public_key, AntiReplayTimestamps::now),
+            server.upgrade_inbound(listener_socket),
+        ));
+
+        //
+        let client_session = client_session.unwrap();
+        let (server_session, _, _) = server_session.unwrap();
+        (client_session, server_session)
+    }
+
+    #[test]
+    fn simple_test() -> io::Result<()> {
+        // perform handshake with two testing peers
+        let ((client, _client_public), (server, server_public)) = build_peers();
+        let (mut client, mut server) = perform_handshake(client, server_public, server);
+
+        block_on(client.write_all(b"stormlight"))?;
+        block_on(client.write_all(b" "))?;
+        block_on(client.write_all(b"archive"))?;
+        block_on(client.flush())?;
+        block_on(client.close())?;
+
+        let mut buf = Vec::new();
+        block_on(server.read_to_end(&mut buf))?;
+
+        assert_eq!(buf, b"stormlight archive");
+
+        Ok(())
+    }
+
+    // we used to time out when given a stream of all zeros, now we want an EOF
+    #[test]
+    fn dont_read_forever() {
+        // setup fake socket
+        let mut fake_socket = ReadOnlyTestSocket::new(&[0u8]);
+
+        // the socket will read a continuous streams of zeros
+        fake_socket.set_trailing();
+
+        // setup a NoiseStream with a dummy state
+        let noise_session = hfs_noise::HfsNoiseSession::new_for_testing();
+        let mut peer = NoiseStream::new(fake_socket, noise_session);
+
+        // make sure we error and we don't continuously read
+        block_on(async move {
+            let mut buffer = [0u8; 128];
+            let res = peer.read(&mut buffer).await;
+            assert!(res.is_err());
+        });
+    }
+
+    #[test]
+    fn interleaved_writes() {
+        // perform handshake with two testing peers
+        let ((client, _client_public), (server, server_public)) = build_peers();
+        let (mut client, mut server) = perform_handshake(client, server_public, server);
+
+        block_on(client.write_all(b"The Name of the Wind")).unwrap();
+        block_on(client.flush()).unwrap();
+        block_on(client.write_all(b"The Wise Man's Fear")).unwrap();
+        block_on(client.flush()).unwrap();
+
+        block_on(server.write_all(b"The Doors of Stone")).unwrap();
+        block_on(server.flush()).unwrap();
+
+        let mut buf = [0; 20];
+        block_on(server.read_exact(&mut buf)).unwrap();
+        assert_eq!(&buf, b"The Name of the Wind");
+        let mut buf = [0; 19];
+        block_on(server.read_exact(&mut buf)).unwrap();
+        assert_eq!(&buf, b"The Wise Man's Fear");
+
+        let mut buf = [0; 18];
+        block_on(client.read_exact(&mut buf)).unwrap();
+        assert_eq!(&buf, b"The Doors of Stone");
+    }
+
+    #[test]
+    fn u16_max_writes() {
+        // perform handshake with two testing peers
+        let ((client, _client_public), (server, server_public)) = build_peers();
+        let (mut client, mut server) = perform_handshake(client, server_public, server);
+
+        let buf_send = [1; noise::MAX_SIZE_NOISE_MSG];
+        block_on(client.write_all(&buf_send)).unwrap();
+        block_on(client.flush()).unwrap();
+
+        let mut buf_receive = [0; noise::MAX_SIZE_NOISE_MSG];
+        block_on(server.read_exact(&mut buf_receive)).unwrap();
+        assert_eq!(&buf_receive[..], &buf_send[..]);
+    }
+
+    #[test]
+    fn fragmented_stream() {
+        // create an in-memory socket for testing
+        let (mut dialer_socket, mut listener_socket) = ReadWriteTestSocket::new_pair();
+
+        // fragment reads
+        dialer_socket.set_fragmented_read();
+        listener_socket.set_fragmented_read();
+
+        // get peers
+        let ((client, _client_public_key), (server, server_public_key)) = build_peers();
+
+        // perform the handshake
+        let (client, server) = block_on(join(
+            client.upgrade_outbound(dialer_socket, server_public_key, AntiReplayTimestamps::now),
+            server.upgrade_inbound(listener_socket),
+        ));
+
+        // get session
+        let mut client = client.unwrap();
+        let (mut server, _, _) = server.unwrap();
+
+        // test send and receive
+        block_on(client.write_all(b"The Name of the Wind")).unwrap();
+        block_on(client.flush()).unwrap();
+        block_on(client.write_all(b"The Wise Man's Fear")).unwrap();
+        block_on(client.flush()).unwrap();
+
+        block_on(server.write_all(b"The Doors of Stone")).unwrap();
+        block_on(server.flush()).unwrap();
+
+        let mut buf = [0; 20];
+        block_on(server.read_exact(&mut buf)).unwrap();
+        assert_eq!(&buf, b"The Name of the Wind");
+        let mut buf = [0; 19];
+        block_on(server.read_exact(&mut buf)).unwrap();
+        assert_eq!(&buf, b"The Wise Man's Fear");
+
+        let mut buf = [0; 18];
+        block_on(client.read_exact(&mut buf)).unwrap();
+        assert_eq!(&buf, b"The Doors of Stone");
+    }
 }
