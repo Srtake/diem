@@ -682,11 +682,11 @@ mod test {
         let ((client, _client_public), (server, server_public)) = build_peers();
         let (mut client, mut server) = perform_handshake(client, server_public, server);
 
-        let buf_send = [1; noise::MAX_SIZE_NOISE_MSG];
+        let buf_send = [1; hfs_noise::MAX_SIZE_NOISE_MSG];
         block_on(client.write_all(&buf_send)).unwrap();
         block_on(client.flush()).unwrap();
 
-        let mut buf_receive = [0; noise::MAX_SIZE_NOISE_MSG];
+        let mut buf_receive = [0; hfs_noise::MAX_SIZE_NOISE_MSG];
         block_on(server.read_exact(&mut buf_receive)).unwrap();
         assert_eq!(&buf_receive[..], &buf_send[..]);
     }
