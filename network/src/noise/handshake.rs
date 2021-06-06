@@ -1,21 +1,18 @@
-// Copyright (c) The Diem Core Contributors
-// SPDX-License-Identifier: Apache-2.0
-
-//! The handshake module implements the handshake part of the protocol.
+//! The handshake module implements the handshake part of the protocol with Noise Hybrid Forward Secrecy support.
 //! This module also implements additional anti-DoS mitigation,
 //! by including a timestamp in each handshake initialization message.
 //! Refer to the module's documentation for more information.
 //! A successful handshake returns a [`NoiseStream`] which is defined in the
 //! [stream] module.
 //!
-//! [stream]: crate::noise::stream
+//! [stream]: crate::noise::stream 
 
 use crate::noise::{error::NoiseHandshakeError, stream::NoiseStream};
 use diem_config::{
     config::{Peer, PeerRole, PeerSet},
     network_id::NetworkContext,
 };
-use diem_crypto::{noise, x25519};
+use diem_crypto::{hfs_noise, x25519, pqc_kem};
 use diem_infallible::{duration_since_epoch, RwLock};
 use diem_logger::trace;
 use diem_types::PeerId;
@@ -34,6 +31,7 @@ use std::{collections::HashMap, convert::TryFrom as _, fmt::Debug, sync::Arc};
 /// If the client timestamp has been seen before, or is not strictly increasing,
 /// we can abort the handshake early and avoid heavy Diffie-Hellman computations.
 /// If the client timestamp is valid, we store it.
+
 #[derive(Default)]
 pub struct AntiReplayTimestamps(HashMap<x25519::PublicKey, u64>);
 
@@ -137,7 +135,7 @@ pub struct NoiseUpgrader {
     /// The validator's network context
     pub network_context: Arc<NetworkContext>,
     /// Config for executing Noise handshakes. Includes our static private key.
-    noise_config: noise::NoiseConfig,
+    noise_config: hfs_noise::HfsNoiseConfig,
     /// Handshake authentication can be either mutual or server-only authentication.
     auth_mode: HandshakeAuthMode,
 }
@@ -151,7 +149,7 @@ impl NoiseUpgrader {
     ) -> Self {
         Self {
             network_context,
-            noise_config: noise::NoiseConfig::new(key),
+            noise_config: hfs_noise::HfsNoiseConfig::new(key),
             auth_mode,
         }
     }
@@ -197,10 +195,10 @@ impl NoiseUpgrader {
 
     /// The client message consist of the prologue + a noise message with a timestamp as payload.
     const CLIENT_MESSAGE_SIZE: usize =
-        Self::PROLOGUE_SIZE + noise::handshake_init_msg_len(AntiReplayTimestamps::TIMESTAMP_SIZE);
-
+        Self::PROLOGUE_SIZE + hfs_noise::handshake_init_msg_len(AntiReplayTimestamps::TIMESTAMP_SIZE);
+    
     /// The server's message contains no payload.
-    const SERVER_MESSAGE_SIZE: usize = noise::handshake_resp_msg_len(0);
+    const SERVER_MESSAGE_SIZE: usize = hfs_noise::handshake_resp_msg_len(0);
 
     /// Perform an outbound protocol upgrade on this connection.
     ///
@@ -658,7 +656,7 @@ mod test {
             build_peers(true /* is_mutual_auth */);
 
         // swap in a different keypair, so the connection will be unauthenticated
-        client.noise_config = noise::NoiseConfig::new(client_private_key);
+        client.noise_config = hfs_noise::HfsNoiseConfig::new(client_private_key);
         let (client_res, server_res) = perform_handshake(&client, &server, server_public_key);
 
         client_res.unwrap_err();

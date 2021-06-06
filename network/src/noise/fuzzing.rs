@@ -13,7 +13,7 @@ use crate::{
     testutils::fake_socket::{ReadOnlyTestSocket, ReadWriteTestSocket},
 };
 use diem_config::network_id::NetworkContext;
-use diem_crypto::{noise::NoiseSession, test_utils::TEST_SEED, x25519, Uniform as _};
+use diem_crypto::{hfs_noise::HfsNoiseSession, test_utils::TEST_SEED, x25519, Uniform as _};
 use diem_types::PeerId;
 use futures::{executor::block_on, future::join};
 use futures_util::io::AsyncReadExt;
@@ -175,8 +175,8 @@ pub fn fuzz_post_handshake(data: &[u8]) {
     fake_socket.set_trailing();
 
     // setup a NoiseStream with a dummy state
-    let noise_session = NoiseSession::new_for_testing();
-    let mut peer = NoiseStream::new(fake_socket, noise_session);
+    let noise_session = HfsNoiseSession::new_for_testing();
+    let mut peer = HfsNoiseStream::new(fake_socket, noise_session);
 
     // read fuzz data
     let _ = block_on(async move {
