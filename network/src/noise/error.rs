@@ -1,7 +1,7 @@
 // Copyright (c) The Diem Core Contributors
 // SPDX-License-Identifier: Apache-2.0
 
-use diem_crypto::noise::NoiseError;
+use diem_crypto::pqc_noise::PQNoiseError;
 use diem_types::PeerId;
 use short_hex_str::ShortHexStr;
 use std::io;
@@ -14,7 +14,7 @@ pub enum NoiseHandshakeError {
     MissingServerPublicKey,
 
     #[error("noise client: MUST_FIX: error building handshake init message: {0}")]
-    BuildClientHandshakeMessageFailed(NoiseError),
+    BuildClientHandshakeMessageFailed(PQNoiseError),
 
     #[error("noise client: error sending client handshake init message: {0}")]
     ClientWriteFailed(io::Error),
@@ -29,7 +29,7 @@ pub enum NoiseHandshakeError {
     ClientFlushFailed(io::Error),
 
     #[error("noise client: error finalizing secure connection: {0}")]
-    ClientFinalizeFailed(NoiseError),
+    ClientFinalizeFailed(PQNoiseError),
 
     #[error("noise server: error reading client handshake init message: {0}")]
     ServerReadFailed(io::Error),
@@ -47,7 +47,7 @@ pub enum NoiseHandshakeError {
     ClientExpectingDifferentPubkey(ShortHexStr, String),
 
     #[error("noise server: client {0}: error parsing handshake init message: {1}")]
-    ServerParseClient(ShortHexStr, NoiseError),
+    ServerParseClient(ShortHexStr, PQNoiseError),
 
     #[error(
         "noise server: client {0}: known client peer id connecting to us with \
@@ -74,7 +74,7 @@ pub enum NoiseHandshakeError {
     ServerReplayDetected(ShortHexStr, u64),
 
     #[error("noise server: client {0}: error building handshake response message: {1}")]
-    BuildServerHandshakeMessageFailed(ShortHexStr, NoiseError),
+    BuildServerHandshakeMessageFailed(ShortHexStr, PQNoiseError),
 
     #[error("noise server: client {0}: error sending server handshake response message: {1}")]
     ServerWriteFailed(ShortHexStr, io::Error),
