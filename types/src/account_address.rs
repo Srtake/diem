@@ -4,7 +4,7 @@ use crate::transaction::authenticator::AuthenticationKey;
 use diem_crypto::{
     ed25519::Ed25519PublicKey,
     hash::{CryptoHasher, HashValue},
-    x25519,
+    x25519, pqc_kem,
 };
 
 pub use move_core_types::account_address::AccountAddress;
@@ -23,6 +23,15 @@ pub fn from_identity_public_key(identity_public_key: x25519::PublicKey) -> Accou
     let pubkey_slice = identity_public_key.as_slice();
     // keep only the last 16 bytes
     array.copy_from_slice(&pubkey_slice[x25519::PUBLIC_KEY_SIZE - AccountAddress::LENGTH..]);
+    AccountAddress::new(array)
+}
+
+// Another version of from_identity_public_key function with a post-quantum identity_public_key param
+pub fn from_pq_identity_public_key(pq_identity_public_key: pqc_kem::PublicKey) -> AccountAddress {
+    let mut array = [0u8; AccountAddress::LENGTH];
+    let pubkey_slice = pq_identity_public_key.to_bytes();
+    // keep only the last 16 bytes
+    array.copy_from_slice(&pubkey_slice[pqc_kem::PUBLIC_KEY_LENGTH - AccountAddress::LENGTH..]);
     AccountAddress::new(array)
 }
 

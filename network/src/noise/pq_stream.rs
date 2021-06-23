@@ -567,11 +567,10 @@ mod test {
         (NoiseUpgrader, pqc_kem::PublicKey),
     ) {
         let (client_private, client_public) = pqc_kem::keypair();
-        // TODO: modify related method in diem_types::account_address crate to adapt current KEM public key
-        let client_peer_id = diem_types::account_address::from_identity_public_key(client_public);
+        let client_peer_id = diem_types::account_address::from_pq_identity_public_key(client_public);
 
         let (server_private, server_public) = pqc_kem::keypair();
-        let server_peer_id = diem_types::account_address::from_identity_public_key(server_public);
+        let server_peer_id = diem_types::account_address::from_pq_identity_public_key(server_public);
 
         let client = NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(client_peer_id),

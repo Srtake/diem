@@ -99,6 +99,7 @@
 
 pub mod error;
 pub mod handshake;
+pub mod pq_handshake;
 pub mod stream;
 
 #[cfg(any(test, feature = "fuzzing"))]
