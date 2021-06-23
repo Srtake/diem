@@ -11,7 +11,7 @@
 //! [stream]: crate::noise::stream
 //! 
 
-use crate::noise::{error::NoiseHandshakeError, pq_stream::NoiseStream};
+use crate::noise::{pq_error::NoiseHandshakeError, pq_stream::NoiseStream};
 use diem_config::{
     config::{Peer, PeerRole, PeerSet},
     network_id::NetworkContext,
@@ -211,7 +211,7 @@ impl NoiseUpgrader {
     /// In mutual auth scenarios, we will also include an anti replay attack counter in the
     /// Noise handshake payload. Currently this counter is always a millisecond-
     /// granularity unix epoch timestamp.
-    public async fn upgrade_outbound<TSocket, F>(
+    pub async fn upgrade_outbound<TSocket, F>(
         &self,
         mut socket: TSocket,
         remote_public_key: pqc_kem::PublicKey,
