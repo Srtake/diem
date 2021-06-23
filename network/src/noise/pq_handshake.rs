@@ -289,7 +289,7 @@ impl NoiseUpgrader {
     pub async fn upgrade_inbound<TSocket>(
         &self,
         mut socket: TSocket,
-    ) -> Result<NoiseStream<TSocket>, PeerId, PeerRole), NoiseHandshakeError>
+    ) -> Result<(NoiseStream<TSocket>, PeerId, PeerRole), NoiseHandshakeError>
     where
         TSocket: AsyncRead + AsyncWrite + Debug + Unpin,
     {
