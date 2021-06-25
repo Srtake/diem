@@ -42,7 +42,7 @@ pub const PQ_MAX_INBOUND_CONNECTIONS: usize = 100;
 pub const PQ_MAX_FRAME_SIZE: usize = 8 * 1024 * 1024; /* 8 MiB */
 pub const PQ_CONNECTION_BACKOFF_BASE: u64 = 2;
 pub const PQ_IP_BYTE_BUCKET_RATE: usize = 102400 /* 100 KiB */;
-pub const PQ_IP_BYTE_BUCKET_SIZE: usize = IP_BYTE_BUCKET_RATE;
+pub const PQ_IP_BYTE_BUCKET_SIZE: usize = PQ_IP_BYTE_BUCKET_RATE;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(default, deny_unknown_fields)]
@@ -92,9 +92,9 @@ pub struct PQNetworkConfig {
     // Maximum number of outbound connections, limited by PeerManager
     pub max_inbound_connections: usize,
     // Inbound rate limiting configuration, if not specified, no rate limiting
-    pub inbound_rate_limit_config: Option<RateLimitConfig>,
+    pub inbound_rate_limit_config: Option<PQRateLimitConfig>,
     // Outbound rate limiting configuration, if not specified, no rate limiting
-    pub outbound_rate_limit_config: Option<RateLimitConfig>,
+    pub outbound_rate_limit_config: Option<PQRateLimitConfig>,
 }
 
 impl Default for PQNetworkConfig {
@@ -114,18 +114,18 @@ impl PQNetworkConfig {
             network_id,
             seed_addrs: HashMap::new(),
             seeds: PQPeerSet::default(),
-            max_frame_size: MAX_FRAME_SIZE,
+            max_frame_size: PQ_MAX_FRAME_SIZE,
             enable_proxy_protocol: false,
-            max_connection_delay_ms: MAX_CONNECTION_DELAY_MS,
-            connectivity_check_interval_ms: CONNECTIVITY_CHECK_INTERVAL_MS,
-            network_channel_size: NETWORK_CHANNEL_SIZE,
-            max_concurrent_network_reqs: MAX_CONCURRENT_NETWORK_REQS,
-            connection_backoff_base: CONNECTION_BACKOFF_BASE,
-            ping_interval_ms: PING_INTERVAL_MS,
-            ping_timeout_ms: PING_TIMEOUT_MS,
-            ping_failures_tolerated: PING_FAILURES_TOLERATED,
-            max_outbound_connections: MAX_FULLNODE_OUTBOUND_CONNECTIONS,
-            max_inbound_connections: MAX_INBOUND_CONNECTIONS,
+            max_connection_delay_ms: PQ_MAX_CONNECTION_DELAY_MS,
+            connectivity_check_interval_ms: PQ_CONNECTIVITY_CHECK_INTERVAL_MS,
+            network_channel_size: PQ_NETWORK_CHANNEL_SIZE,
+            max_concurrent_network_reqs: PQ_MAX_CONCURRENT_NETWORK_REQS,
+            connection_backoff_base: PQ_CONNECTION_BACKOFF_BASE,
+            ping_interval_ms: PQ_PING_INTERVAL_MS,
+            ping_timeout_ms: PQ_PING_TIMEOUT_MS,
+            ping_failures_tolerated: PQ_PING_FAILURES_TOLERATED,
+            max_outbound_connections: PQ_MAX_FULLNODE_OUTBOUND_CONNECTIONS,
+            max_inbound_connections: PQ_MAX_INBOUND_CONNECTIONS,
             inbound_rate_limit_config: None,
             outbound_rate_limit_config: None,
         };
@@ -386,11 +386,11 @@ pub struct PQPeer {
 impl PQPeer {
     /// Combines `Vec<NetworkAddress>` keys with the `HashSet` given
     pub fn new(
-        address: Vec<NetworkAddress>,
+        addresses: Vec<NetworkAddress>,
         mut keys: HashSet<pqc_kem::PublicKey>,
         role: PQPeerRole,
     ) -> PQPeer {
-        let addr_keys = address.iter().filter_map(NetworkAddress::find_noise_proto);
+        let addr_keys = addresses.iter().filter_map(NetworkAddress::find_noise_proto);
         keys.extend(addr_keys);
         PQPeer {
             addresses,
@@ -415,7 +415,7 @@ impl PQPeer {
     }
 
     pub fn from_addrs(role: PQPeerRole, addresses: Vec<NetworkAddress>) -> PQPeer {
-        let keys: HashSet<pqc_kem::PublicKey> = address.iter()
+        let keys: HashSet<pqc_kem::PublicKey> = addresses.iter()
             .filter_map(NetworkAddress::find_noise_proto)
             .collect();
         PQPeer::new(addresses, keys, role)
