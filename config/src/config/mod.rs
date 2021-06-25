@@ -31,6 +31,8 @@ mod mempool_config;
 pub use mempool_config::*;
 mod network_config;
 pub use network_config::*;
+mod pq_network_config;
+pub use pq_network_config::*;
 mod json_rpc_config;
 pub use json_rpc_config::*;
 mod secure_backend_config;

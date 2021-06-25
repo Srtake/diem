@@ -13,7 +13,7 @@
 
 use crate::noise::{pq_error::NoiseHandshakeError, pq_stream::NoiseStream};
 use diem_config::{
-    config::{Peer, PeerRole, PeerSet},
+    config::{PQPeer, PQPeerRole, PQPeerSet},
     network_id::NetworkContext,
 };
 use diem_crypto::{pqc_noise, pqc_kem};
@@ -89,23 +89,23 @@ pub enum HandshakeAuthMode {
         // mutual-auth scenarios because we have a bounded set of trusted peers
         // that rarely changes.
         anti_replay_timestamps: RwLock<AntiReplayTimestamps>,
-        trusted_peers: Arc<RwLock<PeerSet>>,
+        trusted_peers: Arc<RwLock<PQPeerSet>>,
     },
     /// In `MaybeMutual` mode, the dialer authenticates the server and the server will allow all
     /// inbound connections from any peer but will mark connections as `Trusted` if the incoming
     /// connection is apart of its trusted peers set.
-    MaybeMutual(Arc<RwLock<PeerSet>>),
+    MaybeMutual(Arc<RwLock<PQPeerSet>>),
 } 
 
 impl HandshakeAuthMode {
-    pub fn mutual(trusted_peers: Arc<RwLock<PeerSet>>) -> Self {
+    pub fn mutual(trusted_peers: Arc<RwLock<PQPeerSet>>) -> Self {
         HandshakeAuthMode::Mutual {
             anti_replay_timestamps: RwLock::new(AntiReplayTimestamps::default()),
             trusted_peers,
         }
     }
 
-    pub fn maybe_mutual(trusted_peers: Arc<RwLock<PeerSet>>) -> Self {
+    pub fn maybe_mutual(trusted_peers: Arc<RwLock<PQPeerSet>>) -> Self {
         HandshakeAuthMode::MaybeMutual(trusted_peers)
     }
 
@@ -227,7 +227,7 @@ impl NoiseUpgrader {
         // craft prologue = self_peer_id | expected_public_key
         client_message[..PeerId::LENGTH].copy_from_slice(self.network_context.peer_id().as_ref());
         client_message[PeerId::LENGTH..Self::PROLOGUE_SIZE]
-            .copy_from_slice(remote_public_key.to_bytes());
+            .copy_from_slice(&remote_public_key.to_bytes());
         
         let (prologue_msg, mut client_noise_msg) = client_message.split_at_mut(Self::PROLOGUE_SIZE);
 
@@ -289,7 +289,7 @@ impl NoiseUpgrader {
     pub async fn upgrade_inbound<TSocket>(
         &self,
         mut socket: TSocket,
-    ) -> Result<(NoiseStream<TSocket>, PeerId, PeerRole), NoiseHandshakeError>
+    ) -> Result<(NoiseStream<TSocket>, PeerId, PQPeerRole), NoiseHandshakeError>
     where
         TSocket: AsyncRead + AsyncWrite + Debug + Unpin,
     {
@@ -356,7 +356,7 @@ impl NoiseUpgrader {
                     None => {
                         // if not, verify that their peerid is constructed correctly from their public key
                         let derived_remote_peer_id = 
-                            diem_types::account_address::from_identity_public_key(
+                            diem_types::account_address::from_pq_identity_public_key(
                                 remote_public_key
                             );
                         if derived_remote_peer_id != remote_peer_id {
@@ -366,7 +366,7 @@ impl NoiseUpgrader {
                                 derived_remote_peer_id,
                             ))
                         } else {
-                            Ok(PeerRole::Unknown)
+                            Ok(PQPeerRole::Unknown)
                         }
                     }
                 }
@@ -402,7 +402,7 @@ impl NoiseUpgrader {
 
         // construct the response
         let mut server_response = [0u8; Self::SERVER_MESSAGE_SIZE];
-        let session = self.nosie_config
+        let session = self.noise_config
             .respond_to_client(handshake_state, None, &mut server_response)
             .map_err(|err| {
                 NoiseHandshakeError::BuildServerHandshakeMessageFailed(remote_peer_short, err)
@@ -428,9 +428,9 @@ impl NoiseUpgrader {
 
     fn authenticate_inbound(
         remote_peer_short: ShortHexStr,
-        peer: &Peer,
+        peer: &PQPeer,
         remote_public_key: &pqc_kem::PublicKey,
-    ) -> Result<PeerRole, NoiseHandshakeError> {
+    ) -> Result<PQPeerRole, NoiseHandshakeError> {
         if !peer.keys.contains(&remote_public_key) {
             return Err(NoiseHandshakeError::UnauthenticatedClientPubkey(
                 remote_peer_short,
@@ -450,7 +450,7 @@ impl NoiseUpgrader {
 mod test {
     use super::*;
     use crate::testutils::fake_socket::ReadWriteTestSocket;
-    use diem_config::config::{Peer, PeerRole};
+    use diem_config::config::{PQPeer, PQPeerRole};
     use diem_crypto::{test_utils::TEST_SEED, traits::Uniform as _};
     use futures::{executor::block_on, future::join};
     use memsocket::MemorySocket;
@@ -477,11 +477,11 @@ mod test {
                 vec![
                     (
                         client_peer_id,
-                        Peer::new(Vec::new(), client_pubkey_set, PeerRole::Validator),
+                        PQPeer::new(Vec::new(), client_pubkey_set, PQPeerRole::Validator),
                     ),
                     (
                         server_peer_id,
-                        Peer::new(Vec::new(), server_pubkey_set, PeerRole::Validator),
+                        PQPeer::new(Vec::new(), server_pubkey_set, PQPeerRole::Validator),
                     ),
                 ]
                 .into_iter()
@@ -492,9 +492,9 @@ mod test {
             (client_auth, server_auth, client_peer_id, server_peer_id)
         } else {
             let client_peer_id =
-                diem_types::account_address::from_identity_public_key(client_public_key);
+                diem_types::account_address::from_pq_identity_public_key(client_public_key);
             let server_peer_id =
-                diem_types::account_address::from_identity_public_key(server_public_key);
+                diem_types::account_address::from_pq_identity_public_key(server_public_key);
             (
                 HandshakeAuthMode::server_only(),
                 HandshakeAuthMode::server_only(),
@@ -526,7 +526,7 @@ mod test {
         server_public_key: pqc_kem::PublicKey
     ) -> (
         Result<NoiseStream<MemorySocket>, NoiseHandshakeError>,
-        Result<(NoiseStream<MemorySocket>, PeerId, PeerRole), NoiseHandshakeError>,
+        Result<(NoiseStream<MemorySocket>, PeerId, PQPeerRole), NoiseHandshakeError>,
     ) {
         // create an in-memory socket for testing
         let (dialer_socket, listener_socket) = MemorySocket::new_pair();

@@ -251,12 +251,12 @@ where
             match self.write_state {
                 WriteState::Init => {
                     if buf.is_some() {
-                        self.write_state = WriteState::BufferData { offset: 0 };
+                        self.write_state = WriteState::BufferDate { offset: 0 };
                     } else {
                         return Poll::Ready(Ok(None));
                     }
                 }
-                WriteState::BufferData { ref mut offset } => {
+                WriteState::BufferDate { ref mut offset } => {
                     let bytes_buffered = if let Some(buf) = buf {
                         let bytes_to_copy =
                             ::std::cmp::min(MAX_WRITE_BUFFER_LENGTH - *offset, buf.len());
