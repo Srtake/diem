@@ -232,7 +232,7 @@ impl PQNetworkConfig {
             peer_id
         } else {
             // TODO: generate with AuthenticationKey
-            diem_types::account_address::from_pq_identity_public_key(config.key.public_key())
+            diem_types::account_address::from_pq_identity_public_key(identity_pk)
         };
         self.identity = PQIdentity::from_config(identity_sk, peer_id);
     }
@@ -333,8 +333,8 @@ pub struct PQRateLimitConfig {
 impl Default for PQRateLimitConfig {
     fn default() -> Self {
         Self {
-            ip_byte_bucket_rate: IP_BYTE_BUCKET_RATE,
-            ip_byte_bucket_size: IP_BYTE_BUCKET_SIZE,
+            ip_byte_bucket_rate: PQ_IP_BYTE_BUCKET_RATE,
+            ip_byte_bucket_size: PQ_IP_BYTE_BUCKET_SIZE,
             initial_bucket_fill_percentage: 25,
             enabled: true,
         }
