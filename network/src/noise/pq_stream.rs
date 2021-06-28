@@ -575,11 +575,13 @@ mod test {
         let client = pq_handshake::NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(client_peer_id),
             client_private,
+            client_public,
             pq_handshake::HandshakeAuthMode::server_only(),
         );
         let server = pq_handshake::NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(server_peer_id),
             server_private,
+            server_public,
             pq_handshake::HandshakeAuthMode::server_only(),
         );
 
