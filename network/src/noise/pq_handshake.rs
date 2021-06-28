@@ -243,8 +243,8 @@ impl NoiseUpgrader {
         ).map_err(NoiseHandshakeError::BuildClientHandshakeMessageFailed)?;
 
         // Send the first handshake message
-        trace!(
-            "{} noise client: handshake write: remote_public_key: {}",
+        println!(
+            "{:?} noise client: handshake write: remote_public_key: {:?}",
             self.network_context,
             remote_public_key,
         );
@@ -253,8 +253,8 @@ impl NoiseUpgrader {
         socket.flush().await.map_err(NoiseHandshakeError::ClientFlushFailed)?;
 
         // receive the server's response
-        trace!(
-            "{} noise client: handshake read: remote_public_key: {}",
+        println!(
+            "{:?} noise client: handshake read: remote_public_key: {:?}",
             self.network_context,
             remote_public_key,
         );
@@ -265,8 +265,8 @@ impl NoiseUpgrader {
             .map_err(NoiseHandshakeError::ClientReadFailed)?;
         
         // Parse the server's response
-        trace!(
-            "{} noise client: handshake finalize: remote_public_key: {}",
+        println!(
+            "{:?} noise client: handshake finalize: remote_public_key: {:?}",
             self.network_context,
             remote_public_key,
         );
@@ -297,7 +297,7 @@ impl NoiseUpgrader {
         let mut client_message = [0; Self::CLIENT_MESSAGE_SIZE];
 
         // receive the prologue + first noise handshake message
-        trace!("{} noise server: handshake read", self.network_context);
+        println!("{:?} noise server: handshake read", self.network_context);
         socket.read_exact(&mut client_message).await
             .map_err(NoiseHandshakeError::ServerReadFailed)?;
         
@@ -409,8 +409,8 @@ impl NoiseUpgrader {
             })?;
         
         // send the response
-        trace!(
-            "{} noise server: handshake write: remote_peer_id: {}",
+        println!(
+            "{:?} noise server: handshake write: remote_peer_id: {:?}",
             self.network_context,
             remote_peer_short,
         );
@@ -418,8 +418,8 @@ impl NoiseUpgrader {
             .map_err(|err| NoiseHandshakeError::ServerWriteFailed(remote_peer_short, err))?;
         
         // finalize the connection
-        trace!(
-            "{} noise server: handshake finalize: remote_peer_id: {}",
+        println!(
+            "{:?} noise server: handshake finalize: remote_peer_id: {:?}",
             self.network_context,
             remote_peer_short,
         );
