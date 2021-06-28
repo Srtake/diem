@@ -470,9 +470,9 @@ mod test {
 
         let (client_auth, server_auth, client_peer_id, server_peer_id) = if is_mutual_auth {
             let client_peer_id = PeerId::random();
-            let client_pubkey_set = [client_public_key].iter().clone().collect();
+            let client_pubkey_set = (&[client_public_key]).iter().clone().collect();
             let server_peer_id = PeerId::random();
-            let server_pubkey_set = [server_public_key].iter().clone().collect();
+            let server_pubkey_set = (&[server_public_key]).iter().clone().collect();
             let trusted_peers = Arc::new(RwLock::new(
                 vec![
                     (
