@@ -8,6 +8,7 @@ use crate::{
 use diem_crypto::{
     traits::{CryptoMaterialError, ValidCryptoMaterialStringExt},
     x25519,
+    pqc_kem,
 };
 #[cfg(any(test, feature = "fuzzing"))]
 use proptest::{collection::vec, prelude::*};
@@ -124,6 +125,7 @@ pub enum Protocol {
     Memory(u16),
     // human-readable x25519::PublicKey is lower-case hex encoded
     NoiseIK(x25519::PublicKey),
+    NoiseIKpq(pqc_kem::PublicKey),
     // TODO(philiphayes): use actual handshake::MessagingProtocolVersion. we
     // probably need to move network wire into its own crate to avoid circular
     // dependency b/w network and types.
@@ -166,8 +168,14 @@ pub enum ParseError {
     #[error("error parsing integer: {0}")]
     ParseIntError(#[from] num::ParseIntError),
 
+    #[error("error parsing hex number: {0}")]
+    ParseHexError(#[from] hex::FromHexError),
+
     #[error("error parsing x25519 public key: {0}")]
     ParseX25519PubkeyError(#[from] CryptoMaterialError),
+
+    #[error("error parsing post-quantum public key")]
+    ParsePQPubkeyError,
 
     #[error("network address cannot be empty")]
     EmptyProtocolString,
@@ -266,6 +274,17 @@ impl NetworkAddress {
             .push(Protocol::Handshake(handshake_version))
     }
 
+    /// Given a base `NetworkAddress`, append post-quantum production protocols and
+    /// return the modified `NetworkAddress`.
+    pub fn append_pq_prod_protos(
+        self,
+        network_pubkey: pqc_kem::PublicKey,
+        handshake_version: u8,
+    ) -> Self {
+        self.push(Protocol::NoiseIKpq(network_pubkey))
+            .push(Protocol::Handshake(handshake_version))
+    }
+
     /// Check that a `NetworkAddress` looks like a typical DiemNet address with
     /// associated protocols.
     ///
@@ -315,6 +334,16 @@ impl NetworkAddress {
         })
     }
 
+    /// A temporary, hacky function to parse out the first `/ln-noise-ikpq/<pubkey>` from
+    /// a `NetworkAddress`. We can remove this soon, when we move to the interim
+    /// "monolithic" transport model.
+    pub fn find_noise_pq_proto(&self) -> Option<pqc_kem::PublicKey> {
+        self.0.iter().find_map(|proto| match proto {
+            Protocol::NoiseIKpq(pubkey) => Some(pubkey.clone()),
+            _ => None,
+        })
+    }
+
     /// A function to rotate public keys for `NoiseIK` protocols
     pub fn rotate_noise_public_key(
         &mut self,
@@ -326,6 +355,22 @@ impl NetworkAddress {
             if let Protocol::NoiseIK(public_key) = protocol {
                 if public_key == to_replace {
                     *protocol = Protocol::NoiseIK(*new_public_key);
+                }
+            }
+        }
+    }
+
+    /// A function to rotate public keys for `NoiseIKpq` protocols
+    pub fn rotate_noise_ikpq_public_key(
+        &mut self,
+        to_replace: &pqc_kem::PublicKey,
+        new_public_key: &pqc_kem::PublicKey,
+    ) {
+        for protocol in self.0.iter_mut() {
+            // Replace the public key in any Noise protocols that match the key
+            if let Protocol::NoiseIKpq(public_key) = protocol {
+                if public_key == to_replace {
+                    *protocol = Protocol::NoiseIKpq(new_public_key.clone());
                 }
             }
         }
@@ -496,8 +541,13 @@ pub fn arb_diemnet_addr() -> impl Strategy<Value = NetworkAddress> {
         any::<(DnsName, u16)>()
             .prop_map(|(name, port)| vec![Protocol::Dns6(name), Protocol::Tcp(port)]),
     ];
-    let arb_diemnet_protos = any::<(x25519::PublicKey, u8)>()
-        .prop_map(|(pubkey, hs)| vec![Protocol::NoiseIK(pubkey), Protocol::Handshake(hs)]);
+    
+    let arb_diemnet_protos = prop_oneof![
+        any::<(x25519::PublicKey, u8)>()
+            .prop_map(|(pubkey, hs)| vec![Protocol::NoiseIK(pubkey), Protocol::Handshake(hs)]),
+        any::<(pqc_kem::PublicKey, u8)>()
+            .prop_map(|(pubkey, hs)| vec![Protocol::NoiseIKpq(pubkey), Protocol::Handshake(hs)]),
+    ];
 
     (arb_transport_protos, arb_diemnet_protos).prop_map(
         |(mut transport_protos, mut diemnet_protos)| {
@@ -529,6 +579,11 @@ impl fmt::Display for Protocol {
                     .to_encoded_string()
                     .expect("ValidCryptoMaterialStringExt::to_encoded_string is infallible")
             ),
+            NoiseIKpq(pubkey) => write!(
+                f,
+                "/ln-noise-ikpq/{}",
+                hex::encode(pubkey.to_bytes())
+            ),
             Handshake(version) => write!(f, "/ln-handshake/{}", version),
         }
     }
@@ -558,6 +613,9 @@ impl Protocol {
             "memory" => Protocol::Memory(parse_one(args)?),
             "ln-noise-ik" => Protocol::NoiseIK(x25519::PublicKey::from_encoded_string(
                 args.next().ok_or(ParseError::UnexpectedEnd)?,
+            )?),
+            "ln-noise-ikpq" => Protocol::NoiseIKpq(pqc_kem::PublicKey::new(
+                &hex::decode(args.next().ok_or(ParseError::UnexpectedEnd)?)?,
             )?),
             "ln-handshake" => Protocol::Handshake(parse_one(args)?),
             unknown => return Err(ParseError::UnknownProtocolType(unknown.to_string())),
@@ -761,6 +819,15 @@ pub fn parse_noise_ik(protos: &[Protocol]) -> Option<(&x25519::PublicKey, &[Prot
     }
 }
 
+/// parse the `&[Protocol]` into the `"/ln-noise-ikpq/<pubkey>"` prefix and
+/// unparsed `&[Protocol]` suffix.
+pub fn parse_noise_ikpq(protos: &[Protocol]) -> Option<(&pqc_kem::PublicKey, &[Protocol])> {
+    match protos.split_first() {
+        Some((Protocol::NoiseIKpq(pubkey), suffix)) => Some((pubkey, suffix)),
+        _ => None,
+    }
+}
+
 /// parse the `&[Protocol]` into the `"/ln-handshake/<version>"` prefix and
 /// unparsed `&[Protocol]` suffix.
 pub fn parse_handshake(protos: &[Protocol]) -> Option<(u8, &[Protocol])> {
@@ -793,9 +860,12 @@ fn parse_diemnet_protos(protos: &[Protocol]) -> Option<&[Protocol]> {
 
     // parse authentication layer
     // ---
-    // parse_noise_ik
+    // parse_noise_ik and parse_noise_ikpq
 
-    let auth_suffix = parse_noise_ik(transport_suffix).map(|x| x.1)?;
+    let auth_suffix = match parse_noise_ik(transport_suffix).map(|x| x.1) {
+        Some(suffix) => suffix,
+        None => parse_noise_ikpq(transport_suffix).map(|x| x.1)?
+    };
 
     // parse handshake layer
 
@@ -831,11 +901,20 @@ mod test {
     fn test_network_address_parse_success() {
         use super::Protocol::*;
 
+        // A dummy x25519 public key
         let pubkey_str = "080e287879c918794170e258bfaddd75acac5b3e350419044655e4983a487120";
         let pubkey = x25519::PublicKey::from_encoded_string(pubkey_str).unwrap();
         let noise_addr_str = format!(
             "/dns/example.com/tcp/1234/ln-noise-ik/{}/ln-handshake/5",
             pubkey_str
+        );
+
+        // Generated post-quantum public key
+        let (pq_privkey, pq_pubkey) = pqc_kem::keypair();
+        let pq_pubkey_str = hex::encode(pq_pubkey.to_bytes());
+        let noise_pq_addr_str = format!(
+            "/dns/example.com/tcp/1234/ln-noise-ikpq/{}/ln-handshake/5",
+            pq_pubkey_str
         );
 
         let test_cases = [
@@ -874,6 +953,15 @@ mod test {
                     NoiseIK(pubkey),
                     Handshake(5),
                 ],
+            ),
+            (
+                &noise_pq_addr_str,
+                vec![
+                    Dns(DnsName("example.com".to_owned())),
+                    Tcp(1234),
+                    NoiseIKpq(pq_pubkey),
+                    Handshake(5)
+                ]
             ),
         ];
 
@@ -1016,6 +1104,18 @@ mod test {
 
         let addr = NetworkAddress::from_str("/tcp/999/memory/123").unwrap();
         assert_eq!(None, parse_noise_ik(addr.as_slice()));
+    }
+
+    #[test]
+    fn test_parse_noise_ikpq() {
+        let (sk, pk) = pqc_kem::keypair();
+        let pk_str = hex::encode(pk.to_bytes());
+        let addr = NetworkAddress::from_str(&format!("/ln-noise-ikpq/{}/tcp/999", pk_str)).unwrap();
+        let expected_suffix: &[Protocol] = &[Protocol::Tcp(999)];
+        assert_eq!(
+            parse_noise_ikpq(addr.as_slice()).unwrap(),
+            (&pk, expected_suffix)
+        );
     }
 
     #[test]
