@@ -339,7 +339,7 @@ impl NetworkAddress {
     /// "monolithic" transport model.
     pub fn find_noise_pq_proto(&self) -> Option<pqc_kem::PublicKey> {
         self.0.iter().find_map(|proto| match proto {
-            Protocol::NoiseIKpq(pubkey) => Some(*pubkey),
+            Protocol::NoiseIKpq(pubkey) => Some(*pubkey.clone()),
             _ => None,
         })
     }
@@ -370,7 +370,7 @@ impl NetworkAddress {
             // Replace the public key in any Noise protocols that match the key
             if let Protocol::NoiseIKpq(public_key) = protocol {
                 if public_key == to_replace {
-                    *protocol = Protocol::NoiseIKpq(*new_public_key);
+                    *protocol = Protocol::NoiseIKpq(*new_public_key.clone());
                 }
             }
         }
