@@ -330,7 +330,7 @@ impl NoiseUpgrader {
 
         // parse it
         let (prologue, client_init_message) = client_message.split_at(Self::PROLOGUE_SIZE);
-        let (remote_public_key.clone(), handshake_state, payload) = self
+        let (remote_public_key, handshake_state, payload) = self
             .noise_config
             .parse_client_init_message(&prologue, &client_init_message)
             .map_err(|err| NoiseHandshakeError::ServerParseClient(remote_peer_short, err))?;
