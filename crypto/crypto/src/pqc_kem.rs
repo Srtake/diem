@@ -11,11 +11,7 @@ use std::convert::{TryFrom, TryInto};
 use itertools::Itertools;
 use thiserror::Error;
 
-
 pub use oqs;
-
-#[cfg(any(test, feature = "fuzzing"))]
-use proptest_derive::Arbitrary;
 
 /// Current used KEM algorithm
 const CURR_ALGORITHM: oqs::kem::Algorithm = oqs::kem::Algorithm::Kyber512;
@@ -115,7 +111,6 @@ pub struct PrivateKey {
 
 /// This type should be used to deserialize a received public key
 #[derive(Clone, SerializeKey, DeserializeKey)]
-#[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
 pub struct PublicKey {
     LENGTH: usize,
     KEM: LiboqsKem,
