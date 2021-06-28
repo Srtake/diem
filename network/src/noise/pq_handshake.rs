@@ -237,7 +237,7 @@ impl NoiseUpgrader {
         // craft first handshake message
         let initiator_state = self.noise_config.initiate_connection(
             &prologue_msg,
-            remote_public_key,
+            remote_public_key.clone(),
             Some(&payload),
             &mut client_noise_msg,
         ).map_err(NoiseHandshakeError::BuildClientHandshakeMessageFailed)?;
@@ -330,7 +330,7 @@ impl NoiseUpgrader {
 
         // parse it
         let (prologue, client_init_message) = client_message.split_at(Self::PROLOGUE_SIZE);
-        let (remote_public_key, handshake_state, payload) = self
+        let (remote_public_key.clone(), handshake_state, payload) = self
             .noise_config
             .parse_client_init_message(&prologue, &client_init_message)
             .map_err(|err| NoiseHandshakeError::ServerParseClient(remote_peer_short, err))?;
@@ -357,7 +357,7 @@ impl NoiseUpgrader {
                         // if not, verify that their peerid is constructed correctly from their public key
                         let derived_remote_peer_id = 
                             diem_types::account_address::from_pq_identity_public_key(
-                                remote_public_key
+                                remote_public_key.clone()
                             );
                         if derived_remote_peer_id != remote_peer_id {
                             Err(NoiseHandshakeError::ClientPeerIdMismatch(
@@ -389,7 +389,7 @@ impl NoiseUpgrader {
 
             // check the timestamp is not a replay
             let mut anti_replay_timestamps = anti_replay_timestamps.write();
-            if anti_replay_timestamps.is_replay(remote_public_key, client_timestamp) {
+            if anti_replay_timestamps.is_replay(remote_public_key.clone(), client_timestamp) {
                 return Err(NoiseHandshakeError::ServerReplayDetected(
                     remote_peer_short,
                     client_timestamp,
