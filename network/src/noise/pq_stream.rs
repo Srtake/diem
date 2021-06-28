@@ -547,7 +547,7 @@ where
 mod test {
     use super::*;
     use crate::{
-        noise::{AntiReplayTimestamps, HandshakeAuthMode, NoiseUpgrader},
+        noise::{pq_handshake},
         testutils::fake_socket::{ReadOnlyTestSocket, ReadWriteTestSocket},
     };
     use diem_config::network_id::NetworkContext;
@@ -563,8 +563,8 @@ mod test {
 
     /// helper to setup two testing peers
     fn build_peers() -> (
-        (NoiseUpgrader, pqc_kem::PublicKey),
-        (NoiseUpgrader, pqc_kem::PublicKey),
+        (pq_handshake::NoiseUpgrader, pqc_kem::PublicKey),
+        (pq_handshake::NoiseUpgrader, pqc_kem::PublicKey),
     ) {
         let (client_private, client_public) = pqc_kem::keypair();
         let client_peer_id = diem_types::account_address::from_pq_identity_public_key(client_public);
@@ -572,15 +572,15 @@ mod test {
         let (server_private, server_public) = pqc_kem::keypair();
         let server_peer_id = diem_types::account_address::from_pq_identity_public_key(server_public);
 
-        let client = NoiseUpgrader::new(
+        let client = pq_handshake::NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(client_peer_id),
             client_private,
-            HandshakeAuthMode::server_only(),
+            pq_handshake::HandshakeAuthMode::server_only(),
         );
-        let server = NoiseUpgrader::new(
+        let server = pq_handshake::NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(server_peer_id),
             server_private,
-            HandshakeAuthMode::server_only(),
+            pq_handshake::HandshakeAuthMode::server_only(),
         );
 
         ((client, client_public), (server, server_public))
@@ -588,16 +588,16 @@ mod test {
 
     /// helper to perform a noise handshake with two peers
     fn perform_handshake(
-        client: NoiseUpgrader,
+        client: pq_handshake::NoiseUpgrader,
         server_public_key: pqc_kem::PublicKey,
-        server: NoiseUpgrader,
+        server: pq_handshake::NoiseUpgrader,
     ) -> (NoiseStream<MemorySocket>, NoiseStream<MemorySocket>) {
         // create an in-memory socket for testing
         let (dialer_socket, listener_socket) = MemorySocket::new_pair();
 
         // perform the handshake
         let (client_session, server_session) = block_on(join(
-            client.upgrade_outbound(dialer_socket, server_public_key, AntiReplayTimestamps::now),
+            client.upgrade_outbound(dialer_socket, server_public_key, pq_handshake::AntiReplayTimestamps::now),
             server.upgrade_inbound(listener_socket),
         ));
 
@@ -703,7 +703,7 @@ mod test {
 
         // perform the handshake
         let (client, server) = block_on(join(
-            client.upgrade_outbound(dialer_socket, server_public_key, AntiReplayTimestamps::now),
+            client.upgrade_outbound(dialer_socket, server_public_key, pq_handshake::AntiReplayTimestamps::now),
             server.upgrade_inbound(listener_socket),
         ));
 
