@@ -324,6 +324,7 @@ impl NoiseUpgrader {
         println!("{:?} noise server: self-dial check passed", self.network_context);
 
         // verify that this is indeed our public key
+        println!("{:?} noise server: self_expected_public_key = {:?}, noise_config.pubkey = {:?}", self.network_context, self_expected_public_key, self.noise_config.public_key().to_bytes());
         if self_expected_public_key != self.noise_config.public_key().to_bytes() {
             return Err(NoiseHandshakeError::ClientExpectingDifferentPubkey(
                 remote_peer_short,
