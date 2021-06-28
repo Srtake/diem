@@ -6,11 +6,13 @@ use crate::{
     x25519,
 };
 use diem_crypto_derive::{DeserializeKey, SerializeKey, SilentDebug, SilentDisplay};
+use itertools::Itertools;
 use rand::{CryptoRng, RngCore};
 use std::convert::{TryFrom, TryInto};
-use itertools::Itertools;
 use thiserror::Error;
-
+use proptest::{collection::vec, prelude::*};
+#[cfg(any(test, feature = "fuzzing"))]
+use proptest_derive::Arbitrary;
 pub use oqs;
 
 /// Current used KEM algorithm
@@ -64,7 +66,6 @@ pub enum PQCKemError {
     CiphertextLengthNotCorrect,
 }
 
-
 /// Return current used algorithm
 pub fn curr_alg() -> oqs::kem::Algorithm {
     CURR_ALGORITHM
@@ -81,7 +82,7 @@ impl core::convert::TryFrom<oqs::kem::Algorithm> for LiboqsKem {
     fn try_from(alg: oqs::kem::Algorithm) -> Result<LiboqsKem, CryptoMaterialError> {
         match LiboqsKem::new(alg) {
             Ok(kem) => Ok(kem),
-            Err(_) => Err(CryptoMaterialError::DeserializationError)
+            Err(_) => Err(CryptoMaterialError::DeserializationError),
         }
     }
 }
@@ -101,20 +102,32 @@ impl LiboqsKem {
     }
 }
 
+#[cfg(any(test, feature = "fuzzing"))]
+impl Arbitrary for LiboqsKem {
+    type Parameters = ();
+    type Strategy = BoxedStrategy<Self>;
+
+    fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
+        let curr_alg = CURR_ALGORITHM;
+        any::<LiboqsKem>().prop_map(|| LiboqsKem::new(curr_alg()).unwrap().boxed())
+    }
+}
+
 /// This type should be used to deserialize a received private key
 #[derive(Clone, DeserializeKey, SilentDisplay, SilentDebug, SerializeKey)]
 pub struct PrivateKey {
     LENGTH: usize,
     KEM: LiboqsKem,
-    KEY: oqs::kem::SecretKey
+    KEY: oqs::kem::SecretKey,
 }
 
 /// This type should be used to deserialize a received public key
 #[derive(Clone, SerializeKey, DeserializeKey)]
+#[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
 pub struct PublicKey {
     LENGTH: usize,
     KEM: LiboqsKem,
-    KEY: oqs::kem::PublicKey
+    KEY: oqs::kem::PublicKey,
 }
 
 //
@@ -129,7 +142,11 @@ impl PrivateKey {
         Ok(PrivateKey {
             LENGTH: kem.kem.length_secret_key(),
             KEM: kem.clone(),
-            KEY: kem.kem.secret_key_from_bytes(bytes_param).unwrap().to_owned()
+            KEY: kem
+                .kem
+                .secret_key_from_bytes(bytes_param)
+                .unwrap()
+                .to_owned(),
         })
     }
 
@@ -139,7 +156,7 @@ impl PrivateKey {
         Ok(PrivateKey {
             LENGTH: kem.kem.length_secret_key(),
             KEM: kem.clone(),
-            KEY: (*sk).clone()
+            KEY: (*sk).clone(),
         })
     }
 
@@ -153,23 +170,30 @@ impl PrivateKey {
         let kem = LiboqsKem::try_from(CURR_ALGORITHM).unwrap();
         match PrivateKey::new(bytes) {
             Ok(private_key) => Ok(private_key),
-            Err(_) => Err(CryptoMaterialError::DeserializationError)
+            Err(_) => Err(CryptoMaterialError::DeserializationError),
         }
     }
 
     /// Decapsulate provided ciphertext to get the shared secret
     pub fn decapsulate(&self, ct: &oqs::kem::Ciphertext) -> oqs::kem::SharedSecret {
         let secret_key: &oqs::kem::SecretKey = &self.KEY;
-        let kem = self.KEM.kem.decapsulate(
-            oqs::kem::SecretKeyRef::from(secret_key),
-            oqs::kem::CiphertextRef::from(ct)
-        ).unwrap();
+        let kem = self
+            .KEM
+            .kem
+            .decapsulate(
+                oqs::kem::SecretKeyRef::from(secret_key),
+                oqs::kem::CiphertextRef::from(ct),
+            )
+            .unwrap();
         kem.clone()
     }
 
     /// Decapsulate provided raw ciphertext to get the shared secret
     pub fn decapsulate_from_raw(&self, ct: &[u8]) -> oqs::kem::SharedSecret {
-        let ct = self.KEM.kem.ciphertext_from_bytes(ct)
+        let ct = self
+            .KEM
+            .kem
+            .ciphertext_from_bytes(ct)
             .ok_or(PQCKemError::CiphertextLengthNotCorrect)
             .unwrap();
         self.decapsulate(&ct.to_owned().clone())
@@ -183,7 +207,11 @@ impl PublicKey {
         Ok(PublicKey {
             LENGTH: kem.kem.length_public_key(),
             KEM: kem.clone(),
-            KEY: kem.kem.public_key_from_bytes(bytes_param).unwrap().to_owned()
+            KEY: kem
+                .kem
+                .public_key_from_bytes(bytes_param)
+                .unwrap()
+                .to_owned(),
         })
     }
 
@@ -193,7 +221,7 @@ impl PublicKey {
         Ok(PublicKey {
             LENGTH: kem.kem.length_public_key(),
             KEM: kem.clone(),
-            KEY: (*pk).clone()
+            KEY: (*pk).clone(),
         })
     }
 
@@ -207,18 +235,19 @@ impl PublicKey {
         let kem = LiboqsKem::try_from(CURR_ALGORITHM);
         match PublicKey::new(bytes) {
             Ok(public_key) => Ok(public_key),
-            Err(_) => Err(CryptoMaterialError::DeserializationError)
+            Err(_) => Err(CryptoMaterialError::DeserializationError),
         }
     }
 
     /// Encapsulate using the public key to get ciphertext (sent to remote end) and shared secret (stored locally)
     pub fn encapsulate(&self) -> (oqs::kem::Ciphertext, oqs::kem::SharedSecret) {
         let public_key: &oqs::kem::PublicKey = &self.KEY;
-        let (ct, ss) = self.KEM.kem.encapsulate(oqs::kem::PublicKeyRef::from(public_key)).unwrap();
-        (
-            ct.clone(),
-            ss.clone()
-        )
+        let (ct, ss) = self
+            .KEM
+            .kem
+            .encapsulate(oqs::kem::PublicKeyRef::from(public_key))
+            .unwrap();
+        (ct.clone(), ss.clone())
     }
 }
 
@@ -276,10 +305,26 @@ impl PartialEq for PrivateKey {
 
 // public key part
 
+impl Arbitrary for PublicKey {
+    type Parameters = ();
+    type Strategy = BoxedStrategy<Self>;
+
+    fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
+        let kem = LiboqsKem::try_from(CURR_ALGORITHM).unwrap();
+        let (sk, pk) = kem.kem.keypair().unwrap();
+        any::<PublicKey>()
+            .prop_map(|| PublicKey {
+                LENGTH: kem.kem.length_public_key(),
+                KEM: kem.clone(),
+                KEY: (*pk).clone(),
+            })
+    }
+}
+
 impl std::convert::From<[u8; PUBLIC_KEY_LENGTH]> for PublicKey {
     fn from(public_key_bytes: [u8; PUBLIC_KEY_LENGTH]) -> Self {
         PublicKey::new(&public_key_bytes).unwrap()
-    }    
+    }
 }
 
 impl std::convert::TryFrom<&[u8]> for PublicKey {
@@ -345,5 +390,8 @@ impl std::fmt::Debug for PublicKey {
 pub fn keypair() -> (PrivateKey, PublicKey) {
     let kemalg = oqs::kem::Kem::new(curr_alg()).unwrap();
     let (pk, sk) = kemalg.keypair().unwrap();
-    (PrivateKey::new_from_oqs(&sk).unwrap(), PublicKey::new_from_oqs(&pk).unwrap())
+    (
+        PrivateKey::new_from_oqs(&sk).unwrap(),
+        PublicKey::new_from_oqs(&pk).unwrap(),
+    )
 }
