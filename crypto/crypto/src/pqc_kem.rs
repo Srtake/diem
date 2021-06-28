@@ -315,7 +315,7 @@ impl Arbitrary for PublicKey {
             .prop_map(|_| PublicKey {
                 LENGTH: kem.kem.length_public_key(),
                 KEM: kem.clone(),
-                KEY: (*pk).clone(),
+                KEY: pk.clone(),
             }).boxed()
     }
 }
