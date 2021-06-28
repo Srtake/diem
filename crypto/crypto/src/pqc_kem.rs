@@ -11,7 +11,11 @@ use std::convert::{TryFrom, TryInto};
 use itertools::Itertools;
 use thiserror::Error;
 
+
 pub use oqs;
+
+#[cfg(any(test, feature = "fuzzing"))]
+use proptest_derive::Arbitrary;
 
 /// Current used KEM algorithm
 const CURR_ALGORITHM: oqs::kem::Algorithm = oqs::kem::Algorithm::Kyber512;
