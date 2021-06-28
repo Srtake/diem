@@ -310,13 +310,13 @@ impl Arbitrary for PublicKey {
 
     fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
         let kem = LiboqsKem::try_from(CURR_ALGORITHM).unwrap();
-        let (sk, pk) = kem.kem.keypair().unwrap();
+        let (pk, sk) = kem.kem.keypair().unwrap();
         any::<PublicKey>()
-            .prop_map(|| PublicKey {
+            .prop_map(|_| PublicKey {
                 LENGTH: kem.kem.length_public_key(),
                 KEM: kem.clone(),
                 KEY: (*pk).clone(),
-            })
+            }).boxed()
     }
 }
 
