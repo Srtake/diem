@@ -114,7 +114,7 @@ pub struct NetworkAddress(Vec<Protocol>);
 
 /// A single protocol in the [`NetworkAddress`] protocol stack.
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Deserialize, Serialize)]
-// #[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
+#[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
 pub enum Protocol {
     Ip4(Ipv4Addr),
     Ip6(Ipv6Addr),
