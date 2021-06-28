@@ -470,9 +470,9 @@ mod test {
 
         let (client_auth, server_auth, client_peer_id, server_peer_id) = if is_mutual_auth {
             let client_peer_id = PeerId::random();
-            let client_pubkey_set = [client_public_key.clone()].iter().map(|&x| x).collect();
+            let client_pubkey_set = [client_public_key.clone()].iter().map(|x| x.clone()).collect();
             let server_peer_id = PeerId::random();
-            let server_pubkey_set = [server_public_key.clone()].iter().map(|&x| x).collect();
+            let server_pubkey_set = [server_public_key.clone()].iter().map(|x| x.clone()).collect();
             let trusted_peers = Arc::new(RwLock::new(
                 vec![
                     (
@@ -506,13 +506,13 @@ mod test {
         let client = NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(client_peer_id),
             client_private_key,
-            client_public_key,
+            client_public_key.clone(),
             client_auth,
         );
         let server = NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(server_peer_id),
             server_private_key,
-            client_public_key,
+            client_public_key.clone(),
             server_auth,
         );
 
