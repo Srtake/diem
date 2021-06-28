@@ -390,7 +390,7 @@ impl PQPeer {
         mut keys: HashSet<pqc_kem::PublicKey>,
         role: PQPeerRole,
     ) -> PQPeer {
-        let addr_keys = addresses.iter().filter_map(NetworkAddress::find_noise_proto);
+        let addr_keys = addresses.iter().filter_map(NetworkAddress::find_noise_pq_proto);
         keys.extend(addr_keys);
         PQPeer {
             addresses,
@@ -416,7 +416,7 @@ impl PQPeer {
 
     pub fn from_addrs(role: PQPeerRole, addresses: Vec<NetworkAddress>) -> PQPeer {
         let keys: HashSet<pqc_kem::PublicKey> = addresses.iter()
-            .filter_map(NetworkAddress::find_noise_proto)
+            .filter_map(NetworkAddress::find_noise_pq_proto)
             .collect();
         PQPeer::new(addresses, keys, role)
     }
