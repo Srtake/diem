@@ -171,8 +171,8 @@ pub enum ParseError {
     #[error("error parsing x25519 public key: {0}")]
     ParseX25519PubkeyError(#[from] CryptoMaterialError),
 
-    #[error("error parsing post-quantum algorithm public key: {0}")]
-    ParsePQPubkeyError(#[from] CryptoMaterialError),
+    #[error("error parsing post-quantum public key")]
+    ParsePQPubkeyError,
 
     #[error("network address cannot be empty")]
     EmptyProtocolString,
@@ -541,7 +541,7 @@ pub fn arb_diemnet_addr() -> impl Strategy<Value = NetworkAddress> {
     
     let arb_diemnet_protos = prop_oneof![
         any::<(x25519::PublicKey, u8)>()
-            .prop_map(|(pubkey, hs)| vec![Protocol::NoiseIK(pubkey), Protocol::Handshake(hs)]);
+            .prop_map(|(pubkey, hs)| vec![Protocol::NoiseIK(pubkey), Protocol::Handshake(hs)]),
         any::<(pqc_kem::PublicKey, u8)>()
             .prop_map(|(pubkey, hs)| vec![Protocol::NoiseIKpq(pubkey), Protocol::Handshake(hs)]);
     ];
@@ -580,7 +580,7 @@ impl fmt::Display for Protocol {
                 f,
                 "/ln-noise-ikpq/{}",
                 hex::encode(pubkey.to_bytes())
-            )
+            ),
             Handshake(version) => write!(f, "/ln-handshake/{}", version),
         }
     }

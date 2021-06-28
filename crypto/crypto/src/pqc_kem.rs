@@ -111,6 +111,7 @@ pub struct PrivateKey {
 
 /// This type should be used to deserialize a received public key
 #[derive(Clone, SerializeKey, DeserializeKey)]
+#[cfg_attr(any(test, feature = "fuzzing"), derive(Arbitrary))]
 pub struct PublicKey {
     LENGTH: usize,
     KEM: LiboqsKem,
