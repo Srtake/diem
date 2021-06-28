@@ -304,6 +304,7 @@ impl NoiseUpgrader {
         // extract prologue (remote_peer_id | self_public_key)
         let (remote_peer_id, self_expected_public_key) = 
             client_message[..Self::PROLOGUE_SIZE].split_at(PeerId::LENGTH);
+        println!("{:?} noise server: extract prologue: remote_peer_id = {:?}, self_public_key = {:?}", self.network_context, remote_peer_id, self_expected_public_key);
         
         // parse the client's peer id
         // note: in mutual authenticated network, we could verify that their peer_id is in the trust peer set now.
@@ -311,6 +312,7 @@ impl NoiseUpgrader {
         let remote_peer_id = PeerId::try_from(remote_peer_id)
             .map_err(|_| NoiseHandshakeError::InvalidClientPeerId(hex::encode(remote_peer_id)))?;
         let remote_peer_short = remote_peer_id.short_str();
+        println!("{:?} noise server: parse peer id passed", self.network_context);
 
         // reject accidental self-dials
         // this situation could occur either as a result of our own discovery
@@ -319,6 +321,7 @@ impl NoiseUpgrader {
         if remote_peer_id == self.network_context.peer_id() {
             return Err(NoiseHandshakeError::SelfDialDetected);
         }
+        println!("{:?} noise server: self-dial check passed", self.network_context);
 
         // verify that this is indeed our public key
         if self_expected_public_key != self.noise_config.public_key().to_bytes() {
@@ -327,6 +330,7 @@ impl NoiseUpgrader {
                 hex::encode(self_expected_public_key),
             ));
         }
+        println!("{:?} noise server: public key check passed", self.network_context);
 
         // parse it
         let (prologue, client_init_message) = client_message.split_at(Self::PROLOGUE_SIZE);
@@ -334,6 +338,7 @@ impl NoiseUpgrader {
             .noise_config
             .parse_client_init_message(&prologue, &client_init_message)
             .map_err(|err| NoiseHandshakeError::ServerParseClient(remote_peer_short, err))?;
+        println!("{:?} noise server: parse init message passed", self.network_context);
         
         // if mutual auth mode, verify the remote pubkey is in our set of trusted peers
         let peer_role = match &self.auth_mode {
@@ -372,6 +377,7 @@ impl NoiseUpgrader {
                 }
             }
         }?;
+        println!("{:?} noise server: trusted peers check passed", self.network_context);
 
         // if on a mutually authenticated network,
         // the payload should contain a u64 client timestamp
@@ -399,6 +405,7 @@ impl NoiseUpgrader {
             // store the timestamp
             anti_replay_timestamps.store_timestamp(remote_public_key, client_timestamp);
         }
+        println!("{:?} noise server: timestamp check passed", self.network_context);
 
         // construct the response
         let mut server_response = [0u8; Self::SERVER_MESSAGE_SIZE];
