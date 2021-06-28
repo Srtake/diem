@@ -511,17 +511,17 @@ impl<'de> Deserialize<'de> for NetworkAddress {
     }
 }
 
-#[cfg(any(test, feature = "fuzzing"))]
-impl Arbitrary for NetworkAddress {
-    type Parameters = ();
-    type Strategy = BoxedStrategy<Self>;
+// #[cfg(any(test, feature = "fuzzing"))]
+// impl Arbitrary for NetworkAddress {
+//     type Parameters = ();
+//     type Strategy = BoxedStrategy<Self>;
 
-    fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
-        vec(any::<Protocol>(), 1..10)
-            .prop_map(NetworkAddress::new)
-            .boxed()
-    }
-}
+//     fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
+//         vec(any::<Protocol>(), 1..10)
+//             .prop_map(NetworkAddress::new)
+//             .boxed()
+//     }
+// }
 
 #[cfg(any(test, feature = "fuzzing"))]
 pub fn arb_diemnet_addr() -> impl Strategy<Value = NetworkAddress> {
@@ -543,7 +543,7 @@ pub fn arb_diemnet_addr() -> impl Strategy<Value = NetworkAddress> {
         any::<(x25519::PublicKey, u8)>()
             .prop_map(|(pubkey, hs)| vec![Protocol::NoiseIK(pubkey), Protocol::Handshake(hs)]),
         any::<(pqc_kem::PublicKey, u8)>()
-            .prop_map(|(pubkey, hs)| vec![Protocol::NoiseIKpq(pubkey), Protocol::Handshake(hs)]);
+            .prop_map(|(pubkey, hs)| vec![Protocol::NoiseIKpq(pubkey), Protocol::Handshake(hs)]),
     ];
 
     (arb_transport_protos, arb_diemnet_protos).prop_map(
@@ -612,7 +612,7 @@ impl Protocol {
                 args.next().ok_or(ParseError::UnexpectedEnd)?,
             )?),
             "ln-noise-ikpq" => Protocol::NoiseIKpq(pqc_kem::PublicKey::new(
-                hex::decode(args.next().ok_or(ParseError::UnexpectedEnd)?),
+                hex::decode(args.next().ok_or(ParseError::UnexpectedEnd)?)?,
             )?),
             "ln-handshake" => Protocol::Handshake(parse_one(args)?),
             unknown => return Err(ParseError::UnknownProtocolType(unknown.to_string())),
