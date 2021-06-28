@@ -199,21 +199,6 @@ impl core::convert::TryFrom<Algorithm> for Kem {
     }
 }
 
-// #[cfg(any(test, feature = "fuzzing"))]
-// impl Arbitrary for PublicKey {
-//     type Parameters = (Algorithm);
-//     type Strategy = BoxedStrategy<Self>;
-
-//     fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
-//         let curr_alg = _args.0;
-//         any::<PublicKey>()
-//             .prop_map(move |alg| {
-//                 let (sk, pk) = Kem::new(curr_alg).keypair()?;
-//                 pk
-//             }).boxed()
-//     }
-// }
-
 impl Kem {
     /// Construct a new algorithm
     pub fn new(algorithm: Algorithm) -> Result<Self> {

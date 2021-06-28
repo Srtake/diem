@@ -102,17 +102,6 @@ impl LiboqsKem {
     }
 }
 
-// #[cfg(any(test, feature = "fuzzing"))]
-// impl Arbitrary for LiboqsKem {
-//     type Parameters = ();
-//     type Strategy = BoxedStrategy<Self>;
-
-//     fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
-//         let curr_alg = CURR_ALGORITHM;
-//         any::<LiboqsKem>().prop_map(|| LiboqsKem::new(curr_alg()).unwrap().boxed())
-//     }
-// }
-
 /// This type should be used to deserialize a received private key
 #[derive(Clone, DeserializeKey, SilentDisplay, SilentDebug, SerializeKey)]
 pub struct PrivateKey {
