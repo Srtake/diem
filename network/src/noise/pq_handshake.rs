@@ -520,7 +520,7 @@ mod test {
         let server = NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(server_peer_id),
             server_private_key,
-            client_public_key.clone(),
+            server_public_key.clone(),
             server_auth,
         );
 
