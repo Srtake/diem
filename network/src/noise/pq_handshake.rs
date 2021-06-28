@@ -470,9 +470,9 @@ mod test {
 
         let (client_auth, server_auth, client_peer_id, server_peer_id) = if is_mutual_auth {
             let client_peer_id = PeerId::random();
-            let client_pubkey_set = [client_public_key].iter().map(|&x| x).collect();
+            let client_pubkey_set = [client_public_key.clone()].iter().map(|x.clone()| x).collect();
             let server_peer_id = PeerId::random();
-            let server_pubkey_set = [server_public_key].iter().map(|&x| x).collect();
+            let server_pubkey_set = [server_public_key.clone()].iter().map(|x.clone()| x).collect();
             let trusted_peers = Arc::new(RwLock::new(
                 vec![
                     (
@@ -492,9 +492,9 @@ mod test {
             (client_auth, server_auth, client_peer_id, server_peer_id)
         } else {
             let client_peer_id =
-                diem_types::account_address::from_pq_identity_public_key(client_public_key);
+                diem_types::account_address::from_pq_identity_public_key(client_public_key.clone());
             let server_peer_id =
-                diem_types::account_address::from_pq_identity_public_key(server_public_key);
+                diem_types::account_address::from_pq_identity_public_key(server_public_key.clone());
             (
                 HandshakeAuthMode::server_only(),
                 HandshakeAuthMode::server_only(),
@@ -552,7 +552,7 @@ mod test {
         // 2. perform the handshake with some timestamp, it should work
         let (dialer_socket, listener_socket) = MemorySocket::new_pair();
         let (client_session, server_session) = block_on(join(
-            client.upgrade_outbound(dialer_socket, server_public_key, bad_timestamp(1)),
+            client.upgrade_outbound(dialer_socket, server_public_key.clone(), bad_timestamp(1)),
             server.upgrade_inbound(listener_socket),
         ));
 
@@ -562,7 +562,7 @@ mod test {
         // 3. perform the handshake again with timestamp in the past, it should fail
         let (dialer_socket, listener_socket) = MemorySocket::new_pair();
         let (client_session, server_session) = block_on(join(
-            client.upgrade_outbound(dialer_socket, server_public_key, bad_timestamp(0)),
+            client.upgrade_outbound(dialer_socket, server_public_key.clone(), bad_timestamp(0)),
             server.upgrade_inbound(listener_socket),
         ));
 
@@ -572,7 +572,7 @@ mod test {
         // 4. perform the handshake again with the same timestamp, it should fail
         let (dialer_socket, listener_socket) = MemorySocket::new_pair();
         let (client_session, server_session) = block_on(join(
-            client.upgrade_outbound(dialer_socket, server_public_key, bad_timestamp(1)),
+            client.upgrade_outbound(dialer_socket, server_public_key.clone(), bad_timestamp(1)),
             server.upgrade_inbound(listener_socket),
         ));
 
@@ -582,7 +582,7 @@ mod test {
         // 5. perform the handshake again with a valid timestamp in the future, it should work
         let (dialer_socket, listener_socket) = MemorySocket::new_pair();
         let (client_session, server_session) = block_on(join(
-            client.upgrade_outbound(dialer_socket, server_public_key, bad_timestamp(2)),
+            client.upgrade_outbound(dialer_socket, server_public_key.clone(), bad_timestamp(2)),
             server.upgrade_inbound(listener_socket),
         ));
 
@@ -595,7 +595,7 @@ mod test {
         let ((client, client_public_key), (server, server_public_key)) =
             build_peers(is_mutual_auth);
 
-        let (client_res, server_res) = perform_handshake(&client, &server, server_public_key);
+        let (client_res, server_res) = perform_handshake(&client, &server, server_public_key.clone());
         let client_stream = client_res.unwrap();
         let (server_stream, _, _) = server_res.unwrap();
 

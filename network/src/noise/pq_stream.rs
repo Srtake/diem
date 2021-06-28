@@ -567,21 +567,21 @@ mod test {
         (pq_handshake::NoiseUpgrader, pqc_kem::PublicKey),
     ) {
         let (client_private, client_public) = pqc_kem::keypair();
-        let client_peer_id = diem_types::account_address::from_pq_identity_public_key(client_public);
+        let client_peer_id = diem_types::account_address::from_pq_identity_public_key(client_public.clone());
 
         let (server_private, server_public) = pqc_kem::keypair();
-        let server_peer_id = diem_types::account_address::from_pq_identity_public_key(server_public);
+        let server_peer_id = diem_types::account_address::from_pq_identity_public_key(server_public.clone());
 
         let client = pq_handshake::NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(client_peer_id),
             client_private,
-            client_public,
+            client_public.clone(),
             pq_handshake::HandshakeAuthMode::server_only(),
         );
         let server = pq_handshake::NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(server_peer_id),
             server_private,
-            server_public,
+            server_public.clone(),
             pq_handshake::HandshakeAuthMode::server_only(),
         );
 
