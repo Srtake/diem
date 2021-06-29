@@ -332,15 +332,15 @@ impl NoiseUpgrader {
         // this situation could occur either as a result of our own discovery
         // mis-configuration or a potentially malicious discovery peer advertising
         // a (loopback ip or mirror proxy) and our public key.
-        if remote_peer_id == self.network_context.peer_id() {
-            return Err(NoiseHandshakeError::SelfDialDetected);
-        }
         println!(
             "{:?} noise server: self_expected_public_key = {:?}, noise_config.pubkey = {:?}",
             self.network_context,
             self_expected_public_key,
             self.noise_config.public_key().as_slice()
         );
+        if remote_peer_id == self.network_context.peer_id() {
+            return Err(NoiseHandshakeError::SelfDialDetected);
+        }
         println!(
             "{:?} noise server: self-dial check passed",
             self.network_context
