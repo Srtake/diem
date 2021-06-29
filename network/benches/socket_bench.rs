@@ -139,14 +139,10 @@ fn bench_memsocket_send(b: &mut Bencher, msg_len: &usize, server_addr: NetworkAd
 
 /// Benchmark the throughput of sending messages of size `msg_len` over an
 /// in-memory socket with Noise encryption.
-fn bench_memsocket_noise_send(b: &mut Bencher, msg_len: &usize, server_addr: NetworkAddress) {
+fn bench_memsocket_noise_send(b: &mut Bencher, msg_len: &usize, server_addr: NetworkAddress, remote_public_key: x25519::PublicKey) {
     let mut runtime = Runtime::new().unwrap();
 
-    let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
-    let x25519_private = x25519::PrivateKey::generate(&mut rng);
-    let x25519_public = x25519_private.public_key();
-
-    let client_transport = build_memsocket_noise_transport(x25519_public);
+    let client_transport = build_memsocket_noise_transport(remote_public_key);
 
     // Benchmark sending some data to the server.
     let _client_stream =
@@ -182,14 +178,10 @@ fn bench_tcp_send_with_nodelay(b: &mut Bencher, msg_len: &usize, server_addr: Ne
 
 /// Benchmark the throughput of sending messages of size `msg_len` over tcp with
 /// Noise encryption to server at multiaddr `server_addr`.
-fn bench_tcp_noise_send(b: &mut Bencher, msg_len: &usize, server_addr: NetworkAddress) {
+fn bench_tcp_noise_send(b: &mut Bencher, msg_len: &usize, server_addr: NetworkAddress, remote_public_key: x25519::PublicKey) {
     let mut runtime = Runtime::new().unwrap();
 
-    let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
-    let x25519_private = x25519::PrivateKey::generate(&mut rng);
-    let x25519_public = x25519_private.public_key();
-
-    let client_transport = build_tcp_noise_transport(x25519_public);
+    let client_transport = build_tcp_noise_transport(remote_public_key);
 
     // Benchmark sending some data to the server.
     let _client_stream =

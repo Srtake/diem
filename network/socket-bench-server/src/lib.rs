@@ -29,6 +29,8 @@ use std::{env, ffi::OsString, io, sync::Arc};
 use tokio::runtime::Handle;
 use tokio_util::{codec::Framed, compat::FuturesAsyncReadCompatExt};
 
+const TEST_SEED_2: [u8; 32] = [1u8; 32];
+
 #[derive(Debug)]
 pub struct Args {
     pub tcp_addr: Option<NetworkAddress>,
@@ -80,7 +82,7 @@ impl Args {
 /// Build a MemorySocket + Noise transport (No post-quantum support)
 pub fn build_memsocket_noise_transport(remote_public_key: x25519::PublicKey) -> impl Transport<Output = stream::NoiseStream<MemorySocket>> {
     MemoryTransport::default().and_then(move |socket, addr, origin| async move {
-        let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
+        let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED_2);
         let private = x25519::PrivateKey::generate(&mut rng);
         let public = private.public_key();
         let peer_id = diem_types::account_address::from_identity_public_key(public);
@@ -101,7 +103,7 @@ pub fn build_memsocket_noise_transport(remote_public_key: x25519::PublicKey) -> 
 /// Build a Tcp + Noise transport
 pub fn build_tcp_noise_transport(remote_public_key: x25519::PublicKey) -> impl Transport<Output = stream::NoiseStream<TcpSocket>> {
     TcpTransport::default().and_then(move |socket, addr, origin| async move {
-        let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
+        let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED_2);
         let private = x25519::PrivateKey::generate(&mut rng);
         let public = private.public_key();
         let peer_id = diem_types::account_address::from_identity_public_key(public);
