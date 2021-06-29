@@ -288,28 +288,26 @@ fn socket_bench(c: &mut Criterion) {
     );
 
     // add the memsocket and tcp loopback socket benches
-    let x25519_self_private_clone = x25519_self_private.clone();
-    let x25519_self_private_clone_2 = x25519_self_private.clone();
     let mut bench = ParameterizedBenchmark::new(
         "memsocket+noise",
-        |b, msg_len| {
+        move |b, msg_len| {
             bench_memsocket_noise_send(
                 b,
                 msg_len,
                 memsocket_noise_addr.clone(),
-                x25519_self_private_clone,
+                x25519_self_private.clone(),
                 x25519_self_public,
                 x25519_public,
             )
         },
         msg_lens,
     )
-    .with_function("local_tcp+noise", |b, msg_len| {
+    .with_function("local_tcp+noise", move |b, msg_len| {
         bench_tcp_noise_send(
             b,
             msg_len,
             local_tcp_noise_addr.clone(),
-            x25519_self_private_clone_2,
+            x25519_self_private.clone(),
             x25519_self_public,
             x25519_public,
         )
@@ -440,7 +438,6 @@ fn connection_bench(c: &mut Criterion) {
     let x25519_public = x25519_private.public_key();
     let self_x25519_private = x25519::PrivateKey::generate(&mut rng);
     let self_x25519_public = self_x25519_private.public_key();
-    let self_x25519_private_clone = self_x25519_private.clone();
     let bench = if let Some(noise_addr) = args.tcp_noise_addr {
         ParameterizedBenchmark::new(
             "noise_connections",
@@ -448,9 +445,9 @@ fn connection_bench(c: &mut Criterion) {
                 bench_client_connection(
                     b,
                     *concurrency,
-                    || {
+                    move || {
                         build_tcp_noise_transport(
-                            self_x25519_private_clone,
+                            self_x25519_private.clone(),
                             self_x25519_public,
                             x25519_public,
                         )
