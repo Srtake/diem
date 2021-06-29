@@ -196,7 +196,7 @@ fn bench_tcp_noise_send(
 ) {
     let mut runtime = Runtime::new().unwrap();
 
-    let client_transport = build_tcp_noise_transport(&mut rng, remote_public_key);
+    let client_transport = build_tcp_noise_transport_with_prng(&mut rng, remote_public_key);
 
     // Benchmark sending some data to the server.
     let _client_stream =
@@ -287,12 +287,12 @@ fn socket_bench(c: &mut Criterion) {
     let mut bench = ParameterizedBenchmark::new(
         "memsocket+noise",
         move |b, msg_len| {
-            bench_memsocket_noise_send(b, msg_len, memsocket_noise_addr.clone(), x25519_public)
+            bench_memsocket_noise_send(b, msg_len, memsocket_noise_addr.clone(), x25519_public, &mut rng)
         },
         msg_lens,
     )
     .with_function("local_tcp+noise", move |b, msg_len| {
-        bench_tcp_noise_send(b, msg_len, local_tcp_noise_addr.clone(), x25519_public)
+        bench_tcp_noise_send(b, msg_len, local_tcp_noise_addr.clone(), x25519_public, &mut rng)
     });
 
     // let mut bench = ParameterizedBenchmark::new(
@@ -322,7 +322,7 @@ fn socket_bench(c: &mut Criterion) {
     }
     if let Some(remote_tcp_noise_addr) = remote_tcp_noise_addr {
         bench = bench.with_function("remote_tcp+noise", move |b, msg_len| {
-            bench_tcp_noise_send(b, msg_len, remote_tcp_noise_addr.clone(), x25519_public)
+            bench_tcp_noise_send(b, msg_len, remote_tcp_noise_addr.clone(), x25519_public, &mut rng)
         });
     }
 
