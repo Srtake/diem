@@ -110,7 +110,7 @@ pub fn build_tcp_noise_transport(remote_public_key: x25519::PublicKey) -> impl T
             private,
             handshake::HandshakeAuthMode::server_only(),
         ));
-        let remote_public_key = addr.find_noise_proto();
+        // let remote_public_key = addr.find_noise_proto();
         let (_remote_static_key, socket) = noise_config
             .upgrade_with_noise(socket, origin, Some(remote_public_key))
             .await
