@@ -390,6 +390,10 @@ fn connection_bench(c: &mut Criterion) {
     ::diem_logger::Logger::init_for_testing();
     let concurrency_param: Vec<u64> = vec![16, 32, 64, 128];
     let args = Args::from_env();
+    // TODO: remote public key should be from env args
+    let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
+    let x25519_private = x25519::PrivateKey::generate(&mut rng);
+    let x25519_public = x25519_private.public_key();
     let bench = if let Some(noise_addr) = args.tcp_noise_addr {
         ParameterizedBenchmark::new(
             "noise_connections",
@@ -397,7 +401,7 @@ fn connection_bench(c: &mut Criterion) {
                 bench_client_connection(
                     b,
                     *concurrency,
-                    build_tcp_noise_transport,
+                    move |_| build_tcp_noise_transport(x25519_public),
                     noise_addr.clone(),
                 )
             },
