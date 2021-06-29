@@ -151,8 +151,11 @@ fn bench_memsocket_noise_send(
 ) {
     let mut runtime = Runtime::new().unwrap();
 
-    let client_transport =
-        build_memsocket_noise_transport(self_private_key.clone(), self_public_key, remote_public_key);
+    let client_transport = build_memsocket_noise_transport(
+        self_private_key.clone(),
+        self_public_key,
+        remote_public_key,
+    );
 
     // Benchmark sending some data to the server.
     let _client_stream =
@@ -252,8 +255,12 @@ fn socket_bench(c: &mut Criterion) {
     let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
     let x25519_private = x25519::PrivateKey::generate(&mut rng);
     let x25519_public = x25519_private.public_key();
-    let x25519_self_private = x25519::PrivateKey::generate(&mut rng);
-    let x25519_self_public = x25519_self_private.public_key();
+    let x25519_self_private_mem = x25519::PrivateKey::generate(&mut rng);
+    let x25519_self_public_mem = x25519_self_private.public_key();
+    let x25519_self_private_tcp = x25519::PrivateKey::generate(&mut rng);
+    let x25519_self_public_tcp = x25519_self_private_tcp.public_key();
+    let x25519_self_private_remote = x25519::PrivateKey::generate(&mut rng);
+    let x25519_self_public_remote = x25519_self_private_remote.public_key();
 
     // start local bench servers
 
@@ -264,7 +271,11 @@ fn socket_bench(c: &mut Criterion) {
     );
     let memsocket_noise_addr = start_stream_server(
         &executor,
-        build_memsocket_noise_transport(x25519_self_private.clone(), x25519_self_public, x25519_public),
+        build_memsocket_noise_transport(
+            x25519_self_private_mem.clone(),
+            x25519_self_public_mem,
+            x25519_public,
+        ),
         "/memory/0".parse().unwrap(),
     );
 
@@ -283,7 +294,11 @@ fn socket_bench(c: &mut Criterion) {
     );
     let local_tcp_noise_addr = start_stream_server(
         &executor,
-        build_tcp_noise_transport(x25519_self_private.clone(), x25519_self_public, x25519_public),
+        build_tcp_noise_transport(
+            x25519_self_private_tcp.clone(),
+            x25519_self_public_tcp,
+            x25519_public,
+        ),
         "/ip4/127.0.0.1/tcp/0".parse().unwrap(),
     );
 
@@ -295,8 +310,8 @@ fn socket_bench(c: &mut Criterion) {
                 b,
                 msg_len,
                 memsocket_noise_addr.clone(),
-                x25519_self_private.clone(),
-                x25519_self_public,
+                x25519_self_private_mem.clone(),
+                x25519_self_public_mem,
                 x25519_public,
             )
         },
@@ -307,8 +322,8 @@ fn socket_bench(c: &mut Criterion) {
             b,
             msg_len,
             local_tcp_noise_addr.clone(),
-            x25519_self_private.clone(),
-            x25519_self_public,
+            x25519_self_private_tcp.clone(),
+            x25519_self_public_tcp,
             x25519_public,
         )
     });
@@ -344,8 +359,8 @@ fn socket_bench(c: &mut Criterion) {
                 b,
                 msg_len,
                 remote_tcp_noise_addr.clone(),
-                x25519_self_private.clone(),
-                x25519_self_public,
+                x25519_self_private_remote.clone(),
+                x25519_self_public_remote,
                 x25519_public,
             )
         });
@@ -433,15 +448,15 @@ fn connection_bench(c: &mut Criterion) {
     let concurrency_param: Vec<u64> = vec![16, 32, 64, 128];
     let args = Args::from_env();
     // TODO: remote public key should be from env args
-    let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
-    let x25519_private = x25519::PrivateKey::generate(&mut rng);
-    let x25519_public = x25519_private.public_key();
-    let self_x25519_private = x25519::PrivateKey::generate(&mut rng);
-    let self_x25519_public = self_x25519_private.public_key();
     let bench = if let Some(noise_addr) = args.tcp_noise_addr {
         ParameterizedBenchmark::new(
             "noise_connections",
             move |b, concurrency| {
+                let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
+                let x25519_private = x25519::PrivateKey::generate(&mut rng);
+                let x25519_public = x25519_private.public_key();
+                let self_x25519_private = x25519::PrivateKey::generate(&mut rng);
+                let self_x25519_public = self_x25519_private.public_key();
                 bench_client_connection(
                     b,
                     *concurrency,
