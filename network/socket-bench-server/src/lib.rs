@@ -91,7 +91,7 @@ pub fn build_memsocket_noise_transport_with_prng(
 pub fn build_tcp_noise_transport_with_prng(
     rng: &mut StdRng,
     remote_public_key: x25519::PublicKey,
-) -> impl Transport<Output = stream::NoiseStream<MemorySocket>> {
+) -> impl Transport<Output = stream::NoiseStream<TcpSocket>> {
     let self_private_key = x25519::PrivateKey::generate(rng);
     let self_public_key = self_private_key.public_key();
     build_tcp_noise_transport(self_private_key, self_public_key, remote_public_key)
