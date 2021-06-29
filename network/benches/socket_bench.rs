@@ -233,7 +233,7 @@ fn socket_bench(c: &mut Criterion) {
     let msg_lens = args.msg_lens.unwrap_or(default_msg_lens);
 
     // Generate static public keys
-    let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED_2);
+    let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
     let x25519_private = x25519::PrivateKey::generate(&mut rng);
     let x25519_public = x25519_private.public_key();
 
