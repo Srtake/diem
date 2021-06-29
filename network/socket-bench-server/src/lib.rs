@@ -4,7 +4,7 @@
 #![forbid(unsafe_code)]
 
 use diem_config::network_id::NetworkContext;
-use diem_crypto::{test_utils::TEST_SEED, x25519, Uniform as _};
+use diem_crypto::{test_utils::TEST_SEED, x25519, pqc_kem, Uniform as _};
 use diem_logger::prelude::*;
 use diem_types::network_address::NetworkAddress;
 use futures::{
@@ -21,7 +21,7 @@ use netcore::transport::{
 };
 use network::{
     constants,
-    noise::{stream::NoiseStream, HandshakeAuthMode, NoiseUpgrader},
+    noise::{stream, handshake, hfs_stream, hfs_handshake, pq_stream, pq_handshake},
     protocols::wire::messaging::v1::network_message_frame_codec,
 };
 use rand::prelude::*;
@@ -77,19 +77,19 @@ impl Args {
     }
 }
 
-/// Build a MemorySocket + Noise transport
-pub fn build_memsocket_noise_transport() -> impl Transport<Output = NoiseStream<MemorySocket>> {
+/// Build a MemorySocket + Noise transport (No post-quantum support)
+pub fn build_memsocket_noise_transport(remote_public_key) -> impl Transport<Output = NoiseStream<MemorySocket>> {
     MemoryTransport::default().and_then(move |socket, addr, origin| async move {
         let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
         let private = x25519::PrivateKey::generate(&mut rng);
         let public = private.public_key();
         let peer_id = diem_types::account_address::from_identity_public_key(public);
-        let noise_config = Arc::new(NoiseUpgrader::new(
+        let noise_config = Arc::new(handshake::NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(peer_id),
             private,
-            HandshakeAuthMode::server_only(),
+            handshake::HandshakeAuthMode::server_only(),
         ));
-        let remote_public_key = addr.find_noise_proto();
+        // let remote_public_key = addr.find_noise_proto();
         let (_remote_static_key, socket) = noise_config
             .upgrade_with_noise(socket, origin, remote_public_key)
             .await
@@ -99,16 +99,16 @@ pub fn build_memsocket_noise_transport() -> impl Transport<Output = NoiseStream<
 }
 
 /// Build a Tcp + Noise transport
-pub fn build_tcp_noise_transport() -> impl Transport<Output = NoiseStream<TcpSocket>> {
+pub fn build_tcp_noise_transport(remote_public_key) -> impl Transport<Output = NoiseStream<TcpSocket>> {
     TcpTransport::default().and_then(move |socket, addr, origin| async move {
         let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
         let private = x25519::PrivateKey::generate(&mut rng);
         let public = private.public_key();
         let peer_id = diem_types::account_address::from_identity_public_key(public);
-        let noise_config = Arc::new(NoiseUpgrader::new(
+        let noise_config = Arc::new(handshake::NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(peer_id),
             private,
-            HandshakeAuthMode::server_only(),
+            handshake::HandshakeAuthMode::server_only(),
         ));
         let remote_public_key = addr.find_noise_proto();
         let (_remote_static_key, socket) = noise_config
