@@ -91,7 +91,7 @@ pub fn build_memsocket_noise_transport(remote_public_key: x25519::PublicKey) -> 
         ));
         // let remote_public_key = addr.find_noise_proto();
         let (_remote_static_key, socket) = noise_config
-            .upgrade_with_noise(socket, origin, remote_public_key)
+            .upgrade_with_noise(socket, origin, Some(remote_public_key))
             .await
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
         Ok(socket)
@@ -112,7 +112,7 @@ pub fn build_tcp_noise_transport(remote_public_key: x25519::PublicKey) -> impl T
         ));
         let remote_public_key = addr.find_noise_proto();
         let (_remote_static_key, socket) = noise_config
-            .upgrade_with_noise(socket, origin, remote_public_key)
+            .upgrade_with_noise(socket, origin, Some(remote_public_key))
             .await
             .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
         Ok(socket)
