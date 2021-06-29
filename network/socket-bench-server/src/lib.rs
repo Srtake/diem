@@ -78,7 +78,7 @@ impl Args {
 }
 
 /// Build a MemorySocket + Noise transport (No post-quantum support)
-pub fn build_memsocket_noise_transport(rng: &StdRng, remote_public_key: x25519::PublicKey) -> impl Transport<Output = stream::NoiseStream<MemorySocket>> {
+pub fn build_memsocket_noise_transport(rng: &mut StdRng, remote_public_key: x25519::PublicKey) -> impl Transport<Output = stream::NoiseStream<MemorySocket>> {
     MemoryTransport::default().and_then(move |socket, addr, origin| async move {
         println!("socket = {:?}, addr = {:?}, origin = {:?}", socket, addr, origin);
         let private = x25519::PrivateKey::generate(rng);
@@ -99,7 +99,7 @@ pub fn build_memsocket_noise_transport(rng: &StdRng, remote_public_key: x25519::
 }
 
 /// Build a Tcp + Noise transport
-pub fn build_tcp_noise_transport(rng: &StdRng, remote_public_key: x25519::PublicKey) -> impl Transport<Output = stream::NoiseStream<TcpSocket>> {
+pub fn build_tcp_noise_transport(rng: &mut StdRng, remote_public_key: x25519::PublicKey) -> impl Transport<Output = stream::NoiseStream<TcpSocket>> {
     TcpTransport::default().and_then(move |socket, addr, origin| async move {
         let private = x25519::PrivateKey::generate(rng);
         let public = private.public_key();
