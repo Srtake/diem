@@ -195,7 +195,6 @@ fn bench_tcp_noise_send(
     self_private_key: x25519::PrivateKey,
     self_public_key: x25519::PublicKey,
     remote_public_key: x25519::PublicKey,
-    rng: &mut StdRng,
 ) {
     let mut runtime = Runtime::new().unwrap();
 
