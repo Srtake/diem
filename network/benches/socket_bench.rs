@@ -401,7 +401,7 @@ fn connection_bench(c: &mut Criterion) {
                 bench_client_connection(
                     b,
                     *concurrency,
-                    move |_| build_tcp_noise_transport(x25519_public),
+                    move || build_tcp_noise_transport(x25519_public),
                     noise_addr.clone(),
                 )
             },
