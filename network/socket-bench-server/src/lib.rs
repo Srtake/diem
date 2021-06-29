@@ -4,7 +4,7 @@
 #![forbid(unsafe_code)]
 
 use diem_config::network_id::NetworkContext;
-use diem_crypto::{test_utils::TEST_SEED, x25519, pqc_kem, Uniform as _};
+use diem_crypto::{pqc_kem, test_utils::TEST_SEED, x25519, Uniform as _};
 use diem_logger::prelude::*;
 use diem_types::{network_address::NetworkAddress, PeerId};
 use futures::{
@@ -21,7 +21,7 @@ use netcore::transport::{
 };
 use network::{
     constants,
-    noise::{stream, handshake, hfs_stream, hfs_handshake, pq_stream, pq_handshake},
+    noise::{handshake, hfs_handshake, hfs_stream, pq_handshake, pq_stream, stream},
     protocols::wire::messaging::v1::network_message_frame_codec,
 };
 use rand::prelude::*;
@@ -77,16 +77,41 @@ impl Args {
     }
 }
 
+/// A wrapper of build_memsocket_noise_transport
+pub fn build_memsocket_noise_transport_with_prng(
+    rng: &mut StdRng,
+    remote_public_key: x25519::PublicKey,
+) -> impl Transport<Output = stream::NoiseStream<MemorySocket>> {
+    let self_private_key = x25519::PrivateKey::generate(rng);
+    let self_public_key = self_private_key.public_key();
+    build_memsocket_noise_transport(self_private_key, self_public_key, remote_public_key)
+}
+
+/// A wrapper of build_tcp_noise_transport
+pub fn build_tcp_noise_transport_with_prng(
+    rng: &mut StdRng,
+    remote_public_key: x25519::PublicKey,
+) -> impl Transport<Output = stream::NoiseStream<MemorySocket>> {
+    let self_private_key = x25519::PrivateKey::generate(rng);
+    let self_public_key = self_private_key.public_key();
+    build_tcp_noise_transport(self_private_key, self_public_key, remote_public_key)
+}
+
 /// Build a MemorySocket + Noise transport (No post-quantum support)
-pub fn build_memsocket_noise_transport(rng: &mut StdRng, remote_public_key: x25519::PublicKey) -> impl Transport<Output = stream::NoiseStream<MemorySocket>> {
+pub fn build_memsocket_noise_transport(
+    self_private_key: x25519::PrivateKey,
+    self_public_key: x25519::PublicKey,
+    remote_public_key: x25519::PublicKey,
+) -> impl Transport<Output = stream::NoiseStream<MemorySocket>> {
     MemoryTransport::default().and_then(move |socket, addr, origin| async move {
-        println!("socket = {:?}, addr = {:?}, origin = {:?}", socket, addr, origin);
-        let private = x25519::PrivateKey::generate(rng);
-        let public = private.public_key();
-        let peer_id = diem_types::account_address::from_identity_public_key(public);
+        println!(
+            "socket = {:?}, addr = {:?}, origin = {:?}",
+            socket, addr, origin
+        );
+        let peer_id = diem_types::account_address::from_identity_public_key(self_public_key);
         let noise_config = Arc::new(handshake::NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(peer_id),
-            private,
+            self_private_key,
             handshake::HandshakeAuthMode::server_only(),
         ));
         // let remote_public_key = addr.find_noise_proto();
@@ -99,14 +124,16 @@ pub fn build_memsocket_noise_transport(rng: &mut StdRng, remote_public_key: x255
 }
 
 /// Build a Tcp + Noise transport
-pub fn build_tcp_noise_transport(rng: &mut StdRng, remote_public_key: x25519::PublicKey) -> impl Transport<Output = stream::NoiseStream<TcpSocket>> {
+pub fn build_tcp_noise_transport(
+    self_private_key: x25519::PrivateKey,
+    self_public_key: x25519::PublicKey,
+    remote_public_key: x25519::PublicKey,
+) -> impl Transport<Output = stream::NoiseStream<TcpSocket>> {
     TcpTransport::default().and_then(move |socket, addr, origin| async move {
-        let private = x25519::PrivateKey::generate(rng);
-        let public = private.public_key();
-        let peer_id = diem_types::account_address::from_identity_public_key(public);
+        let peer_id = diem_types::account_address::from_identity_public_key(self_public_key);
         let noise_config = Arc::new(handshake::NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(peer_id),
-            private,
+            self_private_key,
             handshake::HandshakeAuthMode::server_only(),
         ));
         // let remote_public_key = addr.find_noise_proto();
