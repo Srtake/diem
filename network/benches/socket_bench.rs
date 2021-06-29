@@ -256,7 +256,7 @@ fn socket_bench(c: &mut Criterion) {
     let x25519_private = x25519::PrivateKey::generate(&mut rng);
     let x25519_public = x25519_private.public_key();
     let x25519_self_private_mem = x25519::PrivateKey::generate(&mut rng);
-    let x25519_self_public_mem = x25519_self_private.public_key();
+    let x25519_self_public_mem = x25519_self_private_mem.public_key();
     let x25519_self_private_tcp = x25519::PrivateKey::generate(&mut rng);
     let x25519_self_public_tcp = x25519_self_private_tcp.public_key();
     let x25519_self_private_remote = x25519::PrivateKey::generate(&mut rng);
