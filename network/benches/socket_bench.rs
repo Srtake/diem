@@ -139,10 +139,14 @@ fn bench_memsocket_send(b: &mut Bencher, msg_len: &usize, server_addr: NetworkAd
 
 /// Benchmark the throughput of sending messages of size `msg_len` over an
 /// in-memory socket with Noise encryption.
-fn bench_memsocket_noise_send(b: &mut Bencher, msg_len: &usize, server_addr: NetworkAddress, remote_public_key: x25519::PublicKey) {
+fn bench_memsocket_noise_send(b: &mut Bencher, msg_len: &usize, server_addr: NetworkAddress) {
     let mut runtime = Runtime::new().unwrap();
 
-    let client_transport = build_memsocket_noise_transport(remote_public_key);
+    let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
+    let x25519_private = x25519::PrivateKey::generate(&mut rng);
+    let x25519_public = x25519_private.public_key();
+
+    let client_transport = build_memsocket_noise_transport(x25519_public);
 
     // Benchmark sending some data to the server.
     let _client_stream =
@@ -178,10 +182,14 @@ fn bench_tcp_send_with_nodelay(b: &mut Bencher, msg_len: &usize, server_addr: Ne
 
 /// Benchmark the throughput of sending messages of size `msg_len` over tcp with
 /// Noise encryption to server at multiaddr `server_addr`.
-fn bench_tcp_noise_send(b: &mut Bencher, msg_len: &usize, server_addr: NetworkAddress, remote_public_key: x25519::PublicKey) {
+fn bench_tcp_noise_send(b: &mut Bencher, msg_len: &usize, server_addr: NetworkAddress) {
     let mut runtime = Runtime::new().unwrap();
 
-    let client_transport = build_tcp_noise_transport(remote_public_key);
+    let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
+    let x25519_private = x25519::PrivateKey::generate(&mut rng);
+    let x25519_public = x25519_private.public_key();
+
+    let client_transport = build_tcp_noise_transport(x25519_public);
 
     // Benchmark sending some data to the server.
     let _client_stream =
@@ -271,11 +279,11 @@ fn socket_bench(c: &mut Criterion) {
 
     let mut bench = ParameterizedBenchmark::new(
         "memsocket+noise",
-        move |b, msg_len| bench_memsocket_noise_send(b, msg_len, memsocket_noise_addr.clone(), x25519_public),
+        move |b, msg_len| bench_memsocket_noise_send(b, msg_len, memsocket_noise_addr.clone()),
         msg_lens,
     )
     .with_function("local_tcp+noise", move |b, msg_len| {
-        bench_tcp_noise_send(b, msg_len, local_tcp_noise_addr.clone(), x25519_public)
+        bench_tcp_noise_send(b, msg_len, local_tcp_noise_addr.clone())
     });
 
     // let mut bench = ParameterizedBenchmark::new(
