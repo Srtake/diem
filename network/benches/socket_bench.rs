@@ -292,7 +292,7 @@ fn socket_bench(c: &mut Criterion) {
     let x25519_self_private_clone_2 = x25519_self_private.clone();
     let mut bench = ParameterizedBenchmark::new(
         "memsocket+noise",
-        move |b, msg_len| {
+        |b, msg_len| {
             bench_memsocket_noise_send(
                 b,
                 msg_len,
@@ -304,7 +304,7 @@ fn socket_bench(c: &mut Criterion) {
         },
         msg_lens,
     )
-    .with_function("local_tcp+noise", move |b, msg_len| {
+    .with_function("local_tcp+noise", |b, msg_len| {
         bench_tcp_noise_send(
             b,
             msg_len,
@@ -448,7 +448,7 @@ fn connection_bench(c: &mut Criterion) {
                 bench_client_connection(
                     b,
                     *concurrency,
-                    move || {
+                    || {
                         build_tcp_noise_transport(
                             self_x25519_private_clone,
                             self_x25519_public,
