@@ -57,7 +57,7 @@ use netcore::transport::{memory::MemoryTransport, tcp::TcpTransport, Transport};
 use network::{constants, protocols::wire::messaging::v1::network_message_frame_codec};
 use rand::prelude::*;
 use socket_bench_server::{
-    build_memsocket_noise_transport_with_prng, build_tcp_noise_transport_with_prng,
+    build_memsocket_noise_transport, build_tcp_noise_transport,
     start_stream_server, Args,
 };
 use std::{fmt::Debug, io, time::Duration};
@@ -146,12 +146,13 @@ fn bench_memsocket_noise_send(
     b: &mut Bencher,
     msg_len: &usize,
     server_addr: NetworkAddress,
+    self_private_key: x25519::PrivateKey,
+    self_public_key: x25519::PublicKey,
     remote_public_key: x25519::PublicKey,
-    rng: &mut StdRng,
 ) {
     let mut runtime = Runtime::new().unwrap();
 
-    let client_transport = build_memsocket_noise_transport_with_prng(rng, remote_public_key);
+    let client_transport = build_memsocket_noise_transport(self_private_key, self_public_key, remote_public_key);
 
     // Benchmark sending some data to the server.
     let _client_stream =
@@ -191,12 +192,14 @@ fn bench_tcp_noise_send(
     b: &mut Bencher,
     msg_len: &usize,
     server_addr: NetworkAddress,
+    self_private_key: x25519::PrivateKey,
+    self_public_key: x25519::PublicKey,
     remote_public_key: x25519::PublicKey,
     rng: &mut StdRng,
 ) {
     let mut runtime = Runtime::new().unwrap();
 
-    let client_transport = build_tcp_noise_transport_with_prng(&mut rng, remote_public_key);
+    let client_transport = build_tcp_noise_transport(self_private_key, self_public_key, remote_public_key);
 
     // Benchmark sending some data to the server.
     let _client_stream =
@@ -249,6 +252,8 @@ fn socket_bench(c: &mut Criterion) {
     let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
     let x25519_private = x25519::PrivateKey::generate(&mut rng);
     let x25519_public = x25519_private.public_key();
+    let x25519_self_private = x25519::PrivateKey::generate(&mut rng);
+    let x25519_self_public = x25519_self_private.public_key();
 
     // start local bench servers
 
@@ -259,7 +264,7 @@ fn socket_bench(c: &mut Criterion) {
     );
     let memsocket_noise_addr = start_stream_server(
         &executor,
-        build_memsocket_noise_transport_with_prng(&mut rng, x25519_public),
+        build_memsocket_noise_transport(x25519_self_private, x25519_self_public, x25519_public),
         "/memory/0".parse().unwrap(),
     );
 
@@ -278,7 +283,7 @@ fn socket_bench(c: &mut Criterion) {
     );
     let local_tcp_noise_addr = start_stream_server(
         &executor,
-        build_tcp_noise_transport_with_prng(&mut rng, x25519_public),
+        build_tcp_noise_transport(x25519_self_private, x25519_self_public, x25519_public),
         "/ip4/127.0.0.1/tcp/0".parse().unwrap(),
     );
 
@@ -411,6 +416,8 @@ fn connection_bench(c: &mut Criterion) {
     let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
     let x25519_private = x25519::PrivateKey::generate(&mut rng);
     let x25519_public = x25519_private.public_key();
+    let self_x25519_private = x25519::PrivateKey::generate(&mut rng);
+    let self_x25519_public = self_x25519_private.public_key();
     let bench = if let Some(noise_addr) = args.tcp_noise_addr {
         ParameterizedBenchmark::new(
             "noise_connections",
@@ -418,7 +425,7 @@ fn connection_bench(c: &mut Criterion) {
                 bench_client_connection(
                     b,
                     *concurrency,
-                    move || build_tcp_noise_transport_with_prng(&mut rng, x25519_public),
+                    move || build_tcp_noise_transport(self_x25519_private, self_x25519_public, x25519_public),
                     noise_addr.clone(),
                 )
             },
