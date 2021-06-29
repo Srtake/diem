@@ -545,7 +545,7 @@ where
 mod test {
     use super::*;
     use crate::{
-        noise::{AntiReplayTimestamps, HandshakeAuthMode, NoiseUpgrader},
+        noise::{hfs_handshake::AntiReplayTimestamps, hfs_handshake::HandshakeAuthMode, hfs_handshake::NoiseUpgrader},
         testutils::fake_socket::{ReadOnlyTestSocket, ReadWriteTestSocket},
     };
     use diem_config::network_id::NetworkContext;
