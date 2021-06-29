@@ -69,7 +69,3 @@ testing = ["diem-config/testing", "diem-time-service/testing", "memsocket/testin
 [[bench]]
 name = "socket_bench"
 harness = false
-
-[[bench]]
-name = "network_bench"
-harness = false
