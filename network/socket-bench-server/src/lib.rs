@@ -77,26 +77,6 @@ impl Args {
     }
 }
 
-/// A wrapper of build_memsocket_noise_transport
-pub fn build_memsocket_noise_transport_with_prng(
-    rng: &mut StdRng,
-    remote_public_key: x25519::PublicKey,
-) -> impl Transport<Output = stream::NoiseStream<MemorySocket>> {
-    let self_private_key = x25519::PrivateKey::generate(rng);
-    let self_public_key = self_private_key.public_key();
-    build_memsocket_noise_transport(self_private_key, self_public_key, remote_public_key)
-}
-
-/// A wrapper of build_tcp_noise_transport
-pub fn build_tcp_noise_transport_with_prng(
-    rng: &mut StdRng,
-    remote_public_key: x25519::PublicKey,
-) -> impl Transport<Output = stream::NoiseStream<TcpSocket>> {
-    let self_private_key = x25519::PrivateKey::generate(rng);
-    let self_public_key = self_private_key.public_key();
-    build_tcp_noise_transport(self_private_key, self_public_key, remote_public_key)
-}
-
 /// Build a MemorySocket + Noise transport (No post-quantum support)
 pub fn build_memsocket_noise_transport(
     self_private_key: x25519::PrivateKey,
@@ -104,10 +84,6 @@ pub fn build_memsocket_noise_transport(
     remote_public_key: x25519::PublicKey,
 ) -> impl Transport<Output = stream::NoiseStream<MemorySocket>> {
     MemoryTransport::default().and_then(move |socket, addr, origin| async move {
-        println!(
-            "socket = {:?}, addr = {:?}, origin = {:?}",
-            socket, addr, origin
-        );
         let peer_id = diem_types::account_address::from_identity_public_key(self_public_key);
         let noise_config = Arc::new(handshake::NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(peer_id),
