@@ -105,6 +105,10 @@ pub mod pq_error;
 pub mod pq_stream;
 pub mod pq_handshake;
 
+pub mod hfs_error;
+pub mod hfs_stream;
+pub mod hfs_handshake;
+
 #[cfg(any(test, feature = "fuzzing"))]
 pub mod fuzzing;
 
