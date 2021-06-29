@@ -44,7 +44,7 @@ use criterion::{
     criterion_group, criterion_main, AxisScale, Bencher, Criterion, ParameterizedBenchmark,
     PlotConfiguration, Throughput,
 };
-use diem_crypto::{test_utils::TEST_SEED, pqc_kem, x25519};
+use diem_crypto::{test_utils::TEST_SEED, pqc_kem, x25519, Uniform as _};
 use diem_logger::prelude::*;
 use diem_types::{network_address::NetworkAddress, PeerId};
 use futures::{
@@ -58,6 +58,7 @@ use network::{constants, protocols::wire::messaging::v1::network_message_frame_c
 use socket_bench_server::{
     build_memsocket_noise_transport, build_tcp_noise_transport, start_stream_server, Args,
 };
+use rand::prelude::*;
 use std::{fmt::Debug, io, time::Duration};
 use tokio::runtime::{Builder, Runtime};
 use tokio_util::{codec::Framed, compat::FuturesAsyncReadCompatExt};
