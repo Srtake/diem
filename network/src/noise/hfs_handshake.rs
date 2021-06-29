@@ -7,7 +7,7 @@
 //!
 //! [stream]: crate::noise::stream 
 
-use crate::noise::{error::NoiseHandshakeError, stream::NoiseStream};
+use crate::noise::{hfs_error::NoiseHandshakeError, hfs_stream::NoiseStream};
 use diem_config::{
     config::{Peer, PeerRole, PeerSet},
     network_id::NetworkContext,
