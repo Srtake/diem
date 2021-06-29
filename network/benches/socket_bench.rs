@@ -246,7 +246,7 @@ fn socket_bench(c: &mut Criterion) {
     );
     let memsocket_noise_addr = start_stream_server(
         &executor,
-        build_memsocket_noise_transport(x25519_public),
+        build_memsocket_noise_transport(&rng, x25519_public),
         "/memory/0".parse().unwrap(),
     );
 
@@ -265,7 +265,7 @@ fn socket_bench(c: &mut Criterion) {
     );
     let local_tcp_noise_addr = start_stream_server(
         &executor,
-        build_tcp_noise_transport(x25519_public),
+        build_tcp_noise_transport(&rng, x25519_public),
         "/ip4/127.0.0.1/tcp/0".parse().unwrap(),
     );
 

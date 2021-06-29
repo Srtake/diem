@@ -78,14 +78,12 @@ impl Args {
 }
 
 /// Build a MemorySocket + Noise transport (No post-quantum support)
-pub fn build_memsocket_noise_transport(remote_public_key: x25519::PublicKey) -> impl Transport<Output = stream::NoiseStream<MemorySocket>> {
+pub fn build_memsocket_noise_transport(rng: &mut StdRng, remote_public_key: x25519::PublicKey) -> impl Transport<Output = stream::NoiseStream<MemorySocket>> {
     MemoryTransport::default().and_then(move |socket, addr, origin| async move {
         println!("socket = {:?}, addr = {:?}, origin = {:?}", socket, addr, origin);
-        let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
-        let private = x25519::PrivateKey::generate(&mut rng);
+        let private = x25519::PrivateKey::generate(rng);
         let public = private.public_key();
-        // let peer_id = diem_types::account_address::from_identity_public_key(public);
-        let peer_id = PeerId::random();
+        let peer_id = diem_types::account_address::from_identity_public_key(public);
         let noise_config = Arc::new(handshake::NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(peer_id),
             private,
@@ -101,13 +99,11 @@ pub fn build_memsocket_noise_transport(remote_public_key: x25519::PublicKey) -> 
 }
 
 /// Build a Tcp + Noise transport
-pub fn build_tcp_noise_transport(remote_public_key: x25519::PublicKey) -> impl Transport<Output = stream::NoiseStream<TcpSocket>> {
+pub fn build_tcp_noise_transport(rng: &mut StdRng, remote_public_key: x25519::PublicKey) -> impl Transport<Output = stream::NoiseStream<TcpSocket>> {
     TcpTransport::default().and_then(move |socket, addr, origin| async move {
-        let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
-        let private = x25519::PrivateKey::generate(&mut rng);
+        let private = x25519::PrivateKey::generate(rng);
         let public = private.public_key();
-        // let peer_id = diem_types::account_address::from_identity_public_key(public);
-        let peer_id = PeerId::random();
+        let peer_id = diem_types::account_address::from_identity_public_key(public);
         let noise_config = Arc::new(handshake::NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(peer_id),
             private,
