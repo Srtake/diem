@@ -313,7 +313,7 @@ fn socket_bench(c: &mut Criterion) {
     }
     if let Some(remote_tcp_noise_addr) = remote_tcp_noise_addr {
         bench = bench.with_function("remote_tcp+noise", move |b, msg_len| {
-            bench_tcp_noise_send(b, msg_len, remote_tcp_noise_addr.clone(), x25519_public)
+            bench_tcp_noise_send(b, msg_len, remote_tcp_noise_addr.clone())
         });
     }
 
