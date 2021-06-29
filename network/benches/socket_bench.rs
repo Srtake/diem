@@ -70,6 +70,8 @@ const MiB: usize = 1 << 20;
 // we measure all the message being sent.
 const SENDS_PER_ITER: usize = 100;
 
+const TEST_SEED_2: [u8; 32] = [1u8; 32];
+
 /// The tight inner loop we're actually benchmarking. In this benchmark, we simply
 /// measure the throughput of sending many messages of size `msg_len` over
 /// `client_stream`.
@@ -231,7 +233,7 @@ fn socket_bench(c: &mut Criterion) {
     let msg_lens = args.msg_lens.unwrap_or(default_msg_lens);
 
     // Generate static public keys
-    let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
+    let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED_2);
     let x25519_private = x25519::PrivateKey::generate(&mut rng);
     let x25519_public = x25519_private.public_key();
 

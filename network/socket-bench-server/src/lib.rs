@@ -29,8 +29,6 @@ use std::{env, ffi::OsString, io, sync::Arc};
 use tokio::runtime::Handle;
 use tokio_util::{codec::Framed, compat::FuturesAsyncReadCompatExt};
 
-const TEST_SEED_2: [u8; 32] = [1u8; 32];
-
 #[derive(Debug)]
 pub struct Args {
     pub tcp_addr: Option<NetworkAddress>,
