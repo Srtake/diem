@@ -336,17 +336,17 @@ impl NoiseUpgrader {
             return Err(NoiseHandshakeError::SelfDialDetected);
         }
         println!(
-            "{:?} noise server: self-dial check passed",
-            self.network_context
-        );
-
-        // verify that this is indeed our public key
-        println!(
             "{:?} noise server: self_expected_public_key = {:?}, noise_config.pubkey = {:?}",
             self.network_context,
             self_expected_public_key,
             self.noise_config.public_key().as_slice()
         );
+        println!(
+            "{:?} noise server: self-dial check passed",
+            self.network_context
+        );
+
+        // verify that this is indeed our public key
         if self_expected_public_key != self.noise_config.public_key().as_slice() {
             return Err(NoiseHandshakeError::ClientExpectingDifferentPubkey(
                 remote_peer_short,
