@@ -140,5 +140,5 @@ fn network_crate_benchmark(c: &mut Criterion) {
     );
 }
 
-criterion_group!(benches, network_crate_benchmark);
-criterion_main!(benches);
+// criterion_group!(benches, network_crate_benchmark);
+// criterion_main!(benches);
