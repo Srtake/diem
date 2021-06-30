@@ -99,7 +99,50 @@ pub fn build_memsocket_noise_transport(
     })
 }
 
-/// Build a Tcp + Noise transport
+/// Build a MemorySocket + Noise transport (with post-quantum hybrid forward secrecy support)
+pub fn build_memsocket_noise_hfs_transport(
+    self_private_key: x25519::PrivateKey,
+    self_public_key: x25519::PublicKey,
+    remote_public_key: x25519::PublicKey,
+) -> impl Transport<Output = hfs_stream::NoiseStream<MemorySocket>> {
+    MemoryTransport::default().and_then(move |socket, addr, origin| async move {
+        let peer_id = diem_types::account_address::from_identity_public_key(self_public_key);
+        let noise_config = Arc::new(hfs_handshake::NoiseUpgrader::new(
+            NetworkContext::mock_with_peer_id(peer_id),
+            self_private_key,
+            hfs_handshake::HandshakeAuthMode::server_only(),
+        ));
+        let (_remote_static_key, socket) = noise_config
+            .upgrade_with_noise(socket, origin, Some(remote_public_key))
+            .await
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        Ok(socket)
+    })
+}
+
+/// Build a MemorySocket + Noise transport (post-quantum only)
+pub fn build_memsocket_noise_pq_transport(
+    self_private_key: pqc_kem::PrivateKey,
+    self_public_key: pqc_kem::PublicKey,
+    remote_public_key: pqc_kem::PublicKey,
+) -> impl Transport<Output = pq_stream::NoiseStream<MemorySocket>> {
+    MemoryTransport::default().and_then(move |socket, addr, origin| async move {
+        let peer_id = diem_types::account_address::from_pq_identity_public_key(self_public_key);
+        let noise_config = Arc::new(pq_handshake::NoiseUpgrader::new(
+            NetworkContext::mock_with_peer_id(peer_id),
+            self_private_key,
+            self_public_key,
+            pq_handshake::HandshakeAuthMode::server_only(),
+        ));
+        let (_remote_static_key, socket) = noise_config
+            .upgrade_with_noise(socket, origin, Some(remote_public_key))
+            .await
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        Ok(socket)
+    })
+}
+
+/// Build a Tcp + Noise transport (No post-quantum support)
 pub fn build_tcp_noise_transport(
     self_private_key: x25519::PrivateKey,
     self_public_key: x25519::PublicKey,
@@ -113,6 +156,49 @@ pub fn build_tcp_noise_transport(
             handshake::HandshakeAuthMode::server_only(),
         ));
         // let remote_public_key = addr.find_noise_proto();
+        let (_remote_static_key, socket) = noise_config
+            .upgrade_with_noise(socket, origin, Some(remote_public_key))
+            .await
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        Ok(socket)
+    })
+}
+
+/// Build a Tcp + Noise transport (with post-quantum hybrid forward secrecy support)
+pub fn build_tcp_noise_hfs_transport(
+    self_private_key: x25519::PrivateKey,
+    self_public_key: x25519::PublicKey,
+    remote_public_key: x25519::PublicKey,
+) -> impl Transport<Output = hfs_stream::NoiseStream<TcpSocket>> {
+    TcpSocket::default().and_then(move |socket, addr, origin| async move {
+        let peer_id = diem_types::account_address::from_identity_public_key(self_public_key);
+        let noise_config = Arc::new(hfs_handshake::NoiseUpgrader::new(
+            NetworkContext::mock_with_peer_id(peer_id),
+            self_private_key,
+            hfs_handshake::HandshakeAuthMode::server_only(),
+        ));
+        let (_remote_static_key, socket) = noise_config
+            .upgrade_with_noise(socket, origin, Some(remote_public_key))
+            .await
+            .map_err(|err| io::Error::new(io::ErrorKind::Other, err))?;
+        Ok(socket)
+    })
+}
+
+/// Build a Tcp + Noise transport (post-quantum only)
+pub fn build_tcp_noise_pq_transport(
+    self_private_key: pqc_kem::PrivateKey,
+    self_public_key: pqc_kem::PublicKey,
+    remote_public_key: pqc_kem::PublicKey,
+) -> impl Transport<Output = pq_stream::NoiseStream<TcpSocket>> {
+    TcpSocket::default().and_then(move |socket, addr, origin| async movev {
+        let peer_id = diem_types::account_address::from_pq_identity_public_key(self_public_key);
+        let noise_config = Arc::new(pq_handshake::NoiseUpgrader::new(
+            NetworkContext::mock_with_peer_id(peer_id),
+            self_private_key,
+            self_public_key,
+            pq_handshake::HandshakeAuthMode::server_only(),
+        ));
         let (_remote_static_key, socket) = noise_config
             .upgrade_with_noise(socket, origin, Some(remote_public_key))
             .await
