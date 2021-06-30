@@ -127,7 +127,7 @@ pub fn build_memsocket_noise_pq_transport(
     remote_public_key: pqc_kem::PublicKey,
 ) -> impl Transport<Output = pq_stream::NoiseStream<MemorySocket>> {
     MemoryTransport::default().and_then(move |socket, addr, origin| async move {
-        let peer_id = diem_types::account_address::from_pq_identity_public_key(self_public_key);
+        let peer_id = diem_types::account_address::from_pq_identity_public_key(self_public_key.clone());
         let noise_config = Arc::new(pq_handshake::NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(peer_id),
             self_private_key,
@@ -170,7 +170,7 @@ pub fn build_tcp_noise_hfs_transport(
     self_public_key: x25519::PublicKey,
     remote_public_key: x25519::PublicKey,
 ) -> impl Transport<Output = hfs_stream::NoiseStream<TcpSocket>> {
-    TcpSocket::default().and_then(move |socket, addr, origin| async move {
+    TcpTransport::default().and_then(move |socket, addr, origin| async move {
         let peer_id = diem_types::account_address::from_identity_public_key(self_public_key);
         let noise_config = Arc::new(hfs_handshake::NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(peer_id),
@@ -191,7 +191,7 @@ pub fn build_tcp_noise_pq_transport(
     self_public_key: pqc_kem::PublicKey,
     remote_public_key: pqc_kem::PublicKey,
 ) -> impl Transport<Output = pq_stream::NoiseStream<TcpSocket>> {
-    TcpSocket::default().and_then(move |socket, addr, origin| async movev {
+    TcpTransport::default().and_then(move |socket, addr, origin| async move {
         let peer_id = diem_types::account_address::from_pq_identity_public_key(self_public_key);
         let noise_config = Arc::new(pq_handshake::NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(peer_id),
