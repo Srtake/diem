@@ -18,7 +18,8 @@
 
 use diem_logger::info;
 use netcore::transport::tcp::TcpTransport;
-use socket_bench_server::{build_tcp_noise_transport, start_stream_server, Args};
+use diem_crypto::{pqc_kem, test_utils::TEST_SEED, x25519, Uniform as _};
+use socket_bench_server::{build_tcp_noise_transport, build_tcp_noise_hfs_transport, build_tcp_noise_pq_transport, start_stream_server, Args};
 use tokio::runtime::Builder;
 
 fn main() {
@@ -42,5 +43,10 @@ fn main() {
         let addr = start_stream_server(&executor, build_tcp_noise_transport(), addr);
         info!("bench: tcp+noise: listening on: {}", addr);
     }
+
+    if let Some(addr) = args.tcp_noise_hfs_addr {
+        let addr = start_stream_server(&executor, build_tcp_noise_hfs_transport())
+    }
+
     std::thread::park();
 }

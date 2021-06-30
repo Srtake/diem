@@ -62,7 +62,7 @@ use socket_bench_server::{
     build_memsocket_noise_pq_transport,
     build_tcp_noise_transport,
     build_tcp_noise_hfs_transport,
-    build_tcp_noise_pq_transport
+    build_tcp_noise_pq_transport,
     start_stream_server,
     Args,
 };
@@ -158,15 +158,23 @@ fn bench_memsocket_noise_send(
 ) {
     let mut runtime = Runtime::new().unwrap();
 
-    let client_transport = build_memsocket_noise_transport(
-        self_private_key.clone(),
-        self_public_key,
-        remote_public_key,
-    );
+    b.iter(|| {
+        build_memsocket_noise_transport(
+            self_private_key.clone(),
+            self_public_key,
+            remote_public_key,
+        )
+    });
+
+    // let client_transport = build_memsocket_noise_transport(
+    //     self_private_key.clone(),
+    //     self_public_key,
+    //     remote_public_key,
+    // );
 
     // Benchmark sending some data to the server.
-    let _client_stream =
-        bench_client_stream_send(b, *msg_len, &mut runtime, server_addr, client_transport);
+    // let _client_stream =
+    //     bench_client_stream_send(b, *msg_len, &mut runtime, server_addr, client_transport);
 }
 
 /// Benchmark the throughput of sending messages of size `msg_len` over an
@@ -181,15 +189,23 @@ fn bench_memsocket_noise_hfs_send(
 ) {
     let mut runtime = Runtime::new().unwrap();
 
-    let client_transport = build_memsocket_noise_hfs_transport(
-        self_private_key.clone(),
-        self_public_key,
-        remote_public_key,
-    );
+    b.iter(|| {
+        build_memsocket_noise_hfs_transport(
+            self_private_key.clone(),
+            self_public_key,
+            remote_public_key,
+        )
+    });
+
+    // let client_transport = build_memsocket_noise_hfs_transport(
+    //     self_private_key.clone(),
+    //     self_public_key,
+    //     remote_public_key,
+    // );
 
     // Benchmark sending some data to the server.
-    let _client_stream = 
-        bench_client_stream_send(b, *msg_len, &mut runtime, server_addr, client_transport);
+    // let _client_stream = 
+    //     bench_client_stream_send(b, *msg_len, &mut runtime, server_addr, client_transport);
 }
 
 /// Benchmark the throughput of sending messages of size `msg_len` over an
@@ -204,15 +220,23 @@ fn bench_memsocket_noise_pq_send(
 ) {
     let mut runtime = Runtime::new().unwrap();
 
-    let client_transport = build_memsocket_noise_pq_transport(
-        self_private_key.clone(),
-        self_public_key.clone(),
-        remote_public_key.clone(),
-    );
+    b.iter(|| {
+        build_memsocket_noise_pq_transport(
+            self_private_key.clone(),
+            self_public_key.clone(),
+            remote_public_key.clone(),
+        )
+    });
+
+    // let client_transport = build_memsocket_noise_pq_transport(
+    //     self_private_key.clone(),
+    //     self_public_key.clone(),
+    //     remote_public_key.clone(),
+    // );
 
     // Benchmark sending some data to the server.
-    let _client_stream = 
-        bench_client_stream_send(b, *msg_len, &mut runtime, server_addr, client_transport);
+    // let _client_stream = 
+    //     bench_client_stream_send(b, *msg_len, &mut runtime, server_addr, client_transport);
 }
 
 /// Benchmark the throughput of sending messages of size `msg_len` over tcp to
@@ -254,12 +278,14 @@ fn bench_tcp_noise_send(
 ) {
     let mut runtime = Runtime::new().unwrap();
 
-    let client_transport =
-        build_tcp_noise_transport(self_private_key, self_public_key, remote_public_key);
+    b.iter(|| build_tcp_noise_transport(self_private_key.clone(), self_public_key.clone(), remote_public_key.clone()));
+
+    // let client_transport =
+    //     build_tcp_noise_transport(self_private_key, self_public_key, remote_public_key);
 
     // Benchmark sending some data to the server.
-    let _client_stream =
-        bench_client_stream_send(b, *msg_len, &mut runtime, server_addr, client_transport);
+    // let _client_stream =
+    //     bench_client_stream_send(b, *msg_len, &mut runtime, server_addr, client_transport);
 }
 
 /// Benchmark the throughput of sending messages of size `msg_len` over tcp with
@@ -274,12 +300,14 @@ fn bench_tcp_noise_hfs_send(
 ) {
     let mut runtime = Runtime::new().unwrap();
 
-    let client_transport = 
-        build_tcp_noise_hfs_transport(self_private_key, self_public_key, remote_public_key);
+    b.iter(|| build_tcp_noise_hfs_transport(self_private_key.clone(), self_public_key.clone(), remote_public_key.clone()));
+
+    // let client_transport = 
+    //     build_tcp_noise_hfs_transport(self_private_key, self_public_key, remote_public_key);
     
     // Benchmark sending some data to the server.
-    let _client_stream = 
-        bench_client_stream_send(b, *msg_len, &mut runtime, server_addr, client_transport);
+    // let _client_stream = 
+    //     bench_client_stream_send(b, *msg_len, &mut runtime, server_addr, client_transport);
 }
 
 /// Benchmark the throughput of sending messages of size `msg_len` over tcp with
@@ -294,12 +322,14 @@ fn bench_tcp_noise_pq_send(
 ) {
     let mut runtime = Runtime::new().unwrap();
 
-    let client_transport = 
-        build_tcp_noise_pq_transport(self_private_key, self_public_key, remote_public_key);
+    b.iter(|| build_tcp_noise_pq_transport(self_private_key.clone(), self_public_key.clone(), remote_public_key.clone()));
+
+    // let client_transport = 
+    //     build_tcp_noise_pq_transport(self_private_key, self_public_key, remote_public_key);
     
     // Benchmark sending some data to the server.
-    let _client_stream = 
-        bench_client_stream_send(b, *msg_len, &mut runtime, server_addr, client_transport);
+    // let _client_stream = 
+    //     bench_client_stream_send(b, *msg_len, &mut runtime, server_addr, client_transport);
 }
 
 /// Measure sending messages of varying sizes over varying transports, where
@@ -333,6 +363,7 @@ fn bench_tcp_noise_pq_send(
 ///    benchmarks `remote_tcp`, `remote_tcp+noise` and `remote_tcp+nodelay` respectively.
 fn socket_bench(c: &mut Criterion) {
     ::diem_logger::Logger::init_for_testing();
+    let concurrency_param: Vec<u64> = vec![16, 32, 64, 128, 256, 512, 1024];
 
     let rt = Runtime::new().unwrap();
     let executor = rt.handle().clone();
@@ -341,9 +372,12 @@ fn socket_bench(c: &mut Criterion) {
 
     let remote_tcp_addr = args.tcp_addr;
     let remote_tcp_noise_addr = args.tcp_noise_addr;
+    let remote_tcp_noise_hfs_addr = args.tcp_noise_hfs_addr;
+    let remote_tcp_noise_pq_addr = args.tcp_noise_pq_addr;
 
     // Parameterize benchmarks over the message length.
-    let default_msg_lens = vec![32usize, 256, 1 * KiB, 4 * KiB, 64 * KiB, 256 * KiB, 1 * MiB];
+    // let default_msg_lens = vec![32usize, 256, 1 * KiB, 4 * KiB, 64 * KiB, 256 * KiB, 1 * MiB];
+    let default_msg_lens = vec![1 * MiB];
     let msg_lens = args.msg_lens.unwrap_or(default_msg_lens);
 
     // Generate static keypairs
@@ -355,40 +389,25 @@ fn socket_bench(c: &mut Criterion) {
     let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
     let x25519_private = x25519::PrivateKey::generate(&mut rng);
     let x25519_public = x25519_private.public_key();
-    let (pq_private_mem, pq_public_mem) = pqc_kem::keypair();
     let (pq_private_tcp, pq_public_tcp) = pqc_kem::keypair();
     let (pq_private_remote, pq_public_remote) = pqc_kem::keypair();
 
     // Local keypairs
     // Noise without pq support
-    let x25519_self_private_mem = x25519::PrivateKey::generate(&mut rng);
-    let x25519_self_public_mem = x25519_self_private_mem.public_key();
     let x25519_self_private_tcp = x25519::PrivateKey::generate(&mut rng);
     let x25519_self_public_tcp = x25519_self_private_tcp.public_key();
     let x25519_self_private_remote = x25519::PrivateKey::generate(&mut rng);
     let x25519_self_public_remote = x25519_self_private_remote.public_key();
     // Noise with hfs support
-    let x25519_self_hfs_private_mem = x25519::PrivateKey::generate(&mut rng);
-    let x25519_self_hfs_public_mem = x25519_self_hfs_private_mem.public_key();
     let x25519_self_hfs_private_tcp = x25519::PrivateKey::generate(&mut rng);
     let x25519_self_hfs_public_tcp = x25519_self_hfs_private_tcp.public_key();
     let x25519_self_hfs_private_remote = x25519::PrivateKey::generate(&mut rng);
     let x25519_self_hfs_public_remote = x25519_self_hfs_private_remote.public_key();
     // post-quantum only Noise
-    let (pq_self_private_mem, pq_self_public_mem) = pqc_kem::keypair();
     let (pq_self_private_tcp, pq_self_public_tcp) = pqc_kem::keypair();
     let (pq_self_private_remote, pq_self_public_remote) = pqc_kem::keypair();
 
     // start local bench servers
-    let memsocket_noise_addr = start_stream_server(
-        &executor,
-        build_memsocket_noise_transport(
-            x25519_private.clone(),
-            x25519_public,
-            x25519_self_public_mem,
-        ),
-        "/memory/0".parse().unwrap(),
-    );
     let local_tcp_noise_addr = start_stream_server(
         &executor,
         build_tcp_noise_transport(
@@ -398,106 +417,121 @@ fn socket_bench(c: &mut Criterion) {
         ),
         "/ip4/127.0.0.1/tcp/0".parse().unwrap(),
     );
+    let local_tcp_noise_hfs_addr = start_stream_server(
+        &executor,
+        build_tcp_noise_hfs_transport(
+            x25519_private.clone(),
+            x25519_public,
+            x25519_self_hfs_public_tcp,
+        ),
+        "/ip4/127.0.0.1/tcp/0".parse().unwrap(),
+    );
+    let local_tcp_noise_pq_addr = start_stream_server(
+        &executor,
+        build_tcp_noise_pq_transport(
+            pq_private_tcp.clone(),
+            pq_public_tcp.clone(),
+            pq_self_public_tcp.clone(),
+        ),
+        "/ip4/127.0.0.1/tcp/0".parse().unwrap(),
+    );
 
     // add the memsocket and tcp loopback socket benches
     let mut bench = ParameterizedBenchmark::new(
-        "memsocket+noise",
-        move |b, msg_len| {
-            bench_memsocket_noise_send(
+        "noise_connections",
+        move |b, concurrency| {
+            let local_sk = x25519_self_private_tcp.clone();
+            let local_pk = x25519_self_public_tcp.clone();
+            let remote_pk = x25519_public.clone();
+            bench_client_connection(
                 b,
-                msg_len,
-                memsocket_noise_addr.clone(),
-                x25519_self_private_mem.clone(),
-                x25519_self_public_mem,
-                x25519_public,
+                *concurrency,
+                move || {
+                    build_tcp_noise_transport(
+                        local_sk.clone(),
+                        local_pk.clone(),
+                        remote_pk.clone(),
+                    )
+                },
+                local_tcp_noise_addr.clone(),
             )
         },
-        msg_lens,
+        concurrency_param,
     )
-    .with_function("memsocket+noisehfs", move |b, msg_len| {
-        bench_memsocket_noise_hfs_send(
+    .with_function("noisehfs_connection", move |b, concurrency| {
+        let local_sk = x25519_self_hfs_private_tcp.clone();
+        let local_pk = x25519_self_hfs_public_tcp.clone();
+        let remote_pk = x25519_public.clone();
+        bench_client_connection(
             b,
-            msg_len,
-            memsocket_noise_addr.clone(),
-            x25519_self_hfs_private_mem.clone(),
-            x25519_self_hfs_public_mem,
-            x25519_public,
+            *concurrency,
+            move || {
+                build_tcp_noise_hfs_transport(
+                    local_sk.clone(),
+                    local_pk.clone(),
+                    remote_pk.clone(),
+                )
+            },
+            local_tcp_noise_hfs_addr.clone(),
         )
     })
-    .with_function("memsocket+noisepq", move |b, msg_len| {
-        bench_memsocket_noise_pq_send(
+    .with_function("noisepq_connection", move |b, concurrency| {
+        let local_sk = pq_self_private_tcp.clone();
+        let local_pk = pq_self_public_tcp.clone();
+        let remote_pk = pq_public_tcp.clone();
+        bench_client_connection(
             b,
-            msg_len,
-            memsocket_noise_addr.clone(),
-            pq_self_private_mem.clone(),
-            pq_self_public_mem.clone(),
-            pq_public_mem.clone(),
-        )
-    })
-    .with_function("local_tcp+noise", move |b, msg_len| {
-        bench_tcp_noise_send(
-            b,
-            msg_len,
-            local_tcp_noise_addr.clone(),
-            x25519_self_private_tcp.clone(),
-            x25519_self_public_tcp,
-            x25519_public,
-        )
-    })
-    .with_function("local_tcp+noisehfs", move |b, msg_len| {
-        bench_tcp_noise_hfs_send(
-            b,
-            msg_len,
-            local_tcp_noise_addr.clone(),
-            x25519_self_hfs_private_tcp.clone(),
-            x25519_self_hfs_public_tcp,
-            x25519_public,
-        )
-    })
-    .with_function("local_tcp+noisepq", move |b, msg_len| {
-        bench_tcp_noise_pq_send(
-            b,
-            msg_len,
-            local_tcp_noise_addr.clone(),
-            pq_self_private_tcp.clone(),
-            pq_self_public_tcp.clone(),
-            pq_public_tcp.clone(),
+            *concurrency,
+            move || {
+                build_tcp_noise_pq_transport(
+                    local_sk.clone(),
+                    local_pk.clone(),
+                    remote_pk.clone(),
+                )
+            },
+            local_tcp_noise_pq_addr.clone(),
         )
     });
 
-    // optionally enable remote benches if the env variables are set
-    if let Some(remote_tcp_noise_addr) = remote_tcp_noise_addr {
-        bench = bench.with_function("remote_tcp+noise", move |b, msg_len| {
-            bench_tcp_noise_send(
-                b,
-                msg_len,
-                remote_tcp_noise_addr.clone(),
-                x25519_self_private_remote.clone(),
-                x25519_self_public_remote,
-                x25519_public,
-            )
-        })
-        .with_function("remote_tcp+noisehfs", move |b, msg_len| {
-            bench_tcp_noise_hfs_send(
-                b,
-                msg_len,
-                remote_tcp_noise_addr.clone(),
-                x25519_self_hfs_private_remote.clone(),
-                x25519_self_hfs_public_remote,
-                x25519_public,
-            )
-        })
-        .with_function("remote_tcp+noisepq", move |b, msg_len| {
-            bench_tcp_noise_pq_send(
-                b,
-                msg_len,
-                remote_tcp_noise_addr.clone(),
-                pq_self_private_remote.clone(),
-                pq_self_public_remote.clone(),
-                pq_public_remote.clone()
-            )
-        });
-    }
+    // // optionally enable remote benches if the env variables are set
+    // if let Some(remote_tcp_noise_addr) = remote_tcp_noise_addr {
+    //     bench = bench.with_function("remote_tcp+noise", move |b, msg_len| {
+    //         bench_tcp_noise_send(
+    //             b,
+    //             msg_len,
+    //             remote_tcp_noise_addr.clone(),
+    //             x25519_self_private_remote.clone(),
+    //             x25519_self_public_remote,
+    //             x25519_public,
+    //         )
+    //     });
+    // }
+
+    // if let Some(remote_tcp_noise_hfs_addr) = remote_tcp_noise_hfs_addr {
+    //     bench = bench.with_function("remote_tcp+noisehfs", move |b, msg_len| {
+    //         bench_tcp_noise_hfs_send(
+    //             b,
+    //             msg_len,
+    //             remote_tcp_noise_hfs_addr.clone(),
+    //             x25519_self_hfs_private_remote.clone(),
+    //             x25519_self_hfs_public_remote,
+    //             x25519_public,
+    //         )
+    //     });
+    // }
+
+    // if let Some(remote_tcp_noise_pq_addr) = remote_tcp_noise_pq_addr {
+    //     bench = bench.with_function("remote_tcp+noisepq", move |b, msg_len| {
+    //         bench_tcp_noise_pq_send(
+    //             b,
+    //             msg_len,
+    //             remote_tcp_noise_pq_addr.clone(),
+    //             pq_self_private_remote.clone(),
+    //             pq_self_public_remote.clone(),
+    //             pq_public_remote.clone()
+    //         )
+    //     });
+    // }
 
     // set bench configuration
 

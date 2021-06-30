@@ -33,6 +33,8 @@ use tokio_util::{codec::Framed, compat::FuturesAsyncReadCompatExt};
 pub struct Args {
     pub tcp_addr: Option<NetworkAddress>,
     pub tcp_noise_addr: Option<NetworkAddress>,
+    pub tcp_noise_hfs_addr: Option<NetworkAddress>,
+    pub tcp_noise_pq_addr: Option<NetworkAddress>,
     pub msg_lens: Option<Vec<usize>>,
 }
 
@@ -72,6 +74,8 @@ impl Args {
         Self {
             tcp_addr: env::var_os("TCP_ADDR").map(parse_addr),
             tcp_noise_addr: env::var_os("TCP_NOISE_ADDR").map(parse_addr),
+            tcp_noise_hfs_addr: env::var_os("TCP_NOISE_HFS_ADDR").map(parse_addr),
+            tcp_noise_pq_addr: env::var_os("TCP_NOISE_PQ_ADDR").map(parse_addr),
             msg_lens: env::var_os("MSG_LENS").map(parse_msg_lens),
         }
     }
@@ -192,7 +196,7 @@ pub fn build_tcp_noise_pq_transport(
     remote_public_key: pqc_kem::PublicKey,
 ) -> impl Transport<Output = pq_stream::NoiseStream<TcpSocket>> {
     TcpTransport::default().and_then(move |socket, addr, origin| async move {
-        let peer_id = diem_types::account_address::from_pq_identity_public_key(self_public_key);
+        let peer_id = diem_types::account_address::from_pq_identity_public_key(self_public_key.clone());
         let noise_config = Arc::new(pq_handshake::NoiseUpgrader::new(
             NetworkContext::mock_with_peer_id(peer_id),
             self_private_key,
