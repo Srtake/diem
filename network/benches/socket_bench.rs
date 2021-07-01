@@ -363,7 +363,7 @@ fn bench_tcp_noise_pq_send(
 ///    benchmarks `remote_tcp`, `remote_tcp+noise` and `remote_tcp+nodelay` respectively.
 fn socket_bench(c: &mut Criterion) {
     ::diem_logger::Logger::init_for_testing();
-    let concurrency_param: Vec<u64> = vec![16, 32, 64, 128, 256, 512, 1024];
+    let concurrency_param: Vec<u64> = vec![16, 32, 64, 128, 256, 512];
 
     let rt = Runtime::new().unwrap();
     let executor = rt.handle().clone();
@@ -536,9 +536,9 @@ fn socket_bench(c: &mut Criterion) {
     // set bench configuration
 
     bench = bench
-        .warm_up_time(Duration::from_secs(2))
-        .measurement_time(Duration::from_secs(2))
-        .sample_size(10)
+        .warm_up_time(Duration::from_secs(5))
+        .measurement_time(Duration::from_secs(10))
+        .sample_size(100)
         .plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic))
         .throughput(|msg_len| {
             let msg_len = *msg_len as u32;
