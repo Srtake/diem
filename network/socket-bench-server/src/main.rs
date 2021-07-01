@@ -21,6 +21,9 @@ use netcore::transport::tcp::TcpTransport;
 use diem_crypto::{pqc_kem, test_utils::TEST_SEED, x25519, Uniform as _};
 use socket_bench_server::{build_tcp_noise_transport, build_tcp_noise_hfs_transport, build_tcp_noise_pq_transport, start_stream_server, Args};
 use tokio::runtime::Builder;
+use rand::prelude::*;
+
+const TEST_SEED_2: [u8; 32] = [1u8; 32];
 
 fn main() {
     ::diem_logger::Logger::new().init();
@@ -39,13 +42,54 @@ fn main() {
         info!("bench: tcp: listening on: {}", addr);
     }
 
-    if let Some(addr) = args.tcp_noise_addr {
-        let addr = start_stream_server(&executor, build_tcp_noise_transport(), addr);
-        info!("bench: tcp+noise: listening on: {}", addr);
+    else if let Some(addr) = args.tcp_noise_addr {
+        if let Some(local_private_key) = args.local_x25519_private {
+            let local_public_key = local_private_key.public_key();
+            let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED_2);
+            let remote_x25519_private = x25519::PrivateKey::generate(&mut rng);
+            let remote_x25519_public = remote_x25519_private.public_key();
+            let addr = start_stream_server(&executor, build_tcp_noise_transport(
+                remote_x25519_private.clone(), remote_x25519_public.clone(), local_public_key.clone()), addr);
+            info!("bench: tcp+noise: listening on: {}", addr);
+            info!("bench: remote_x25519_public: {:?}", remote_x25519_public);
+        } else {
+            panic!("bench: local private key not set");
+        }
     }
 
-    if let Some(addr) = args.tcp_noise_hfs_addr {
-        let addr = start_stream_server(&executor, build_tcp_noise_hfs_transport())
+    else if let Some(addr) = args.tcp_noise_hfs_addr {
+        if let Some(local_private_key) = args.local_x25519_private {
+            let local_public_key = local_private_key.public_key();
+            let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED_2);
+            let remote_x25519_private = x25519::PrivateKey::generate(&mut rng);
+            let remote_x25519_public = remote_x25519_private.public_key();
+            let addr = start_stream_server(&executor, build_tcp_noise_hfs_transport(
+                remote_x25519_private.clone(), remote_x25519_public.clone(), local_public_key.clone()
+            ), addr);
+            info!("bench: tcp+noisehfs: listening on: {}", addr);
+            info!("bench: remote_x25519_public: {:?}", remote_x25519_public);
+        } else {
+            panic!("bench: local private key not set");
+        }
+    }
+
+    else if let Some(addr) = args.tcp_noise_pq_addr {
+        if let Some(local_private_key) = args.local_pq_private {
+            if let Some(local_public_key) = args.local_pq_public {
+                let (remote_pq_private, remote_pq_public) = pqc_kem::keypair();
+                let (local_pq_private, local_pq_public) = pqc_kem::keypair();
+                let addr = start_stream_server(&executor, build_tcp_noise_pq_transport(
+                    remote_pq_private.clone(), remote_pq_public.clone(), local_public_key.clone()
+                ), addr);
+                info!("bench: tcp+noisepq: listening on: {}", addr);
+                info!("bench: remote_pq_public: {:?}", remote_pq_public);
+            }
+            else {
+                panic!("bench: local public key not set");
+            }
+        } else {
+            panic!("bench: local private key not set");
+        }
     }
 
     std::thread::park();

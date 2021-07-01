@@ -35,6 +35,11 @@ pub struct Args {
     pub tcp_noise_addr: Option<NetworkAddress>,
     pub tcp_noise_hfs_addr: Option<NetworkAddress>,
     pub tcp_noise_pq_addr: Option<NetworkAddress>,
+    pub remote_x25519_public: Option<x25519::PublicKey>,
+    pub remote_pq_public: Option<pqc_kem::PublicKey>,
+    pub local_x25519_private: Option<x25519::PrivateKey>,
+    pub local_pq_private: Option<pqc_kem::PrivateKey>,
+    pub local_pq_public: Option<pqc_kem::PublicKey>,
     pub msg_lens: Option<Vec<usize>>,
 }
 
@@ -76,6 +81,51 @@ impl Args {
             tcp_noise_addr: env::var_os("TCP_NOISE_ADDR").map(parse_addr),
             tcp_noise_hfs_addr: env::var_os("TCP_NOISE_HFS_ADDR").map(parse_addr),
             tcp_noise_pq_addr: env::var_os("TCP_NOISE_PQ_ADDR").map(parse_addr),
+            remote_x25519_public: env::var_os("REMOTE_X25519_PUBLIC").map(move |pubkey| 
+                {
+                    let mut pubkey_slice = [0u8; x25519::PUBLIC_KEY_SIZE];
+                    hex::decode_to_slice(
+                        pubkey.into_string().unwrap(), &mut pubkey_slice as &mut [u8]
+                    ).unwrap();
+                    x25519::PublicKey::from(pubkey_slice)
+                }
+            ),
+            remote_pq_public: env::var_os("REMOTE_PQ_PUBLIC").map(move |pubkey|
+                {
+                    let mut pubkey_slice = [0u8; pqc_kem::PUBLIC_KEY_LENGTH];
+                    hex::decode_to_slice(
+                        pubkey.into_string().unwrap(), &mut pubkey_slice as &mut [u8]
+                    ).unwrap();
+                    pqc_kem::PublicKey::from(pubkey_slice)
+                }
+            ),
+            local_x25519_private: env::var_os("LOCAL_X25519_PRIVATE").map(move |privkey|
+                {
+                    let mut privkey_slice = [0u8; x25519::PRIVATE_KEY_SIZE];
+                    hex::decode_to_slice(
+                        privkey.into_string().unwrap(), &mut privkey_slice as &mut [u8]
+                    ).unwrap();
+                    x25519::PrivateKey::from(privkey_slice)
+                }
+            ),
+            local_pq_private: env::var_os("LOCAL_PQ_PRIVATE").map(move |privkey|
+                {
+                    let mut privkey_slice = [0u8; pqc_kem::SECRET_KEY_LENGTH];
+                    hex::decode_to_slice(
+                        privkey.into_string().unwrap(), &mut privkey_slice as &mut [u8]
+                    ).unwrap();
+                    pqc_kem::PrivateKey::from(privkey_slice)
+                }
+            ),
+            local_pq_public: env::var_os("LOCAL_PQ_PUBLIC").map(move |pubkey|
+                {
+                    let mut pubkey_slice = [0u8; pqc_kem::PUBLIC_KEY_LENGTH];
+                    hex::decode_to_slice(
+                        pubkey.into_string().unwrap(), &mut pubkey_slice as &mut [u8]
+                    ).unwrap();
+                    pqc_kem::PublicKey::from(pubkey_slice)
+                }
+            ),
             msg_lens: env::var_os("MSG_LENS").map(parse_msg_lens),
         }
     }

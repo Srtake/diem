@@ -77,8 +77,6 @@ const MiB: usize = 1 << 20;
 // we measure all the message being sent.
 const SENDS_PER_ITER: usize = 100;
 
-const TEST_SEED_2: [u8; 32] = [1u8; 32];
-
 /// The tight inner loop we're actually benchmarking. In this benchmark, we simply
 /// measure the throughput of sending many messages of size `msg_len` over
 /// `client_stream`.
@@ -616,29 +614,104 @@ fn connection_bench(c: &mut Criterion) {
     let args = Args::from_env();
     // TODO: remote public key should be from env args
     let bench = if let Some(noise_addr) = args.tcp_noise_addr {
-        ParameterizedBenchmark::new(
-            "noise_connections",
-            move |b, concurrency| {
-                let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
-                let x25519_private = x25519::PrivateKey::generate(&mut rng);
-                let x25519_public = x25519_private.public_key();
-                let self_x25519_private = x25519::PrivateKey::generate(&mut rng);
-                let self_x25519_public = self_x25519_private.public_key();
-                bench_client_connection(
-                    b,
-                    *concurrency,
-                    move || {
-                        build_tcp_noise_transport(
-                            self_x25519_private.clone(),
-                            self_x25519_public,
-                            x25519_public,
+        if let Some(local_x25519_private) = args.local_x25519_private {
+            let local_x25519_public = local_x25519_private.public_key();
+            if let Some(remote_x25519_public) = args.remote_x25519_public {
+                ParameterizedBenchmark::new(
+                    "noise_connections",
+                    move |b, concurrency| {
+                        let local_x25519_private_clone = local_x25519_private.clone();
+                        let local_x25519_public_clone = local_x25519_public.clone();
+                        let remote_x25519_public_clone = remote_x25519_public.clone();
+                        bench_client_connection(
+                            b,
+                            *concurrency,
+                            move || {
+                                build_tcp_noise_transport(
+                                    local_x25519_private_clone.clone(),
+                                    local_x25519_public_clone,
+                                    remote_x25519_public_clone,
+                                )
+                            },
+                            noise_addr.clone(),
                         )
                     },
-                    noise_addr.clone(),
+                    concurrency_param,
                 )
-            },
-            concurrency_param,
-        )
+            } else {
+                panic!("Server public key not set");
+            }
+        } 
+        else {
+            panic!("local private key not set");
+        }
+    } else if let Some(noise_addr) = args.tcp_noise_hfs_addr {
+        if let Some(local_x25519_private) = args.local_x25519_private {
+            let local_x25519_public = local_x25519_private.public_key();
+            if let Some(remote_x25519_public) = args.remote_x25519_public {
+                ParameterizedBenchmark::new(
+                    "noisehfs_connections",
+                    move |b, concurrency| {
+                        let local_x25519_private_clone = local_x25519_private.clone();
+                        let local_x25519_public_clone = local_x25519_public.clone();
+                        let remote_x25519_public_clone = remote_x25519_public.clone();
+                        bench_client_connection(
+                            b,
+                            *concurrency,
+                            move || {
+                                build_tcp_noise_hfs_transport(
+                                    local_x25519_private_clone.clone(),
+                                    local_x25519_public_clone,
+                                    remote_x25519_public_clone,
+                                )
+                            },
+                            noise_addr.clone(),
+                        )
+                    },
+                    concurrency_param,
+                )
+            } else {
+                panic!("Server public key not set");
+            }
+        } 
+        else {
+            panic!("local private key not set");
+        }
+    } else if let Some(noise_addr) = args.tcp_noise_pq_addr {
+        if let Some(local_pq_private) = args.local_pq_private {
+            if let Some(local_pq_public) = args.local_pq_public {
+                if let Some(remote_pq_public) = args.remote_pq_public {
+                    ParameterizedBenchmark::new(
+                        "noisepq_connections",
+                        move |b, concurrency| {
+                            let remote_pq_public_clone = remote_pq_public.clone();
+                            let local_pq_private_clone = local_pq_private.clone();
+                            let local_pq_public_clone = local_pq_public.clone();
+                            bench_client_connection(
+                                b,
+                                *concurrency,
+                                move || {
+                                    build_tcp_noise_pq_transport(
+                                        local_pq_private_clone.clone(),
+                                        local_pq_public_clone.clone(),
+                                        remote_pq_public_clone.clone(),
+                                    )
+                                },
+                                noise_addr.clone(),
+                            )
+                        },
+                        concurrency_param,
+                    )
+                } else {
+                    panic!("Server public key not set");
+                }
+            }
+            else {
+                panic!("local public key not set");
+            }
+        } else {
+            panic!("local private key not set");
+        }
     } else if let Some(tcp_addr) = args.tcp_addr {
         ParameterizedBenchmark::new(
             "tcp_connections",
@@ -659,5 +732,5 @@ fn connection_bench(c: &mut Criterion) {
 }
 
 // We remove connection_bench temporarily since the modification to it has not completed yet
-criterion_group!(network_benches, socket_bench);
+criterion_group!(network_benches, connection_bench);
 criterion_main!(network_benches);

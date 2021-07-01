@@ -16,18 +16,18 @@ use proptest_derive::Arbitrary;
 pub use oqs;
 
 /// Current used KEM algorithm
-const CURR_ALGORITHM: oqs::kem::Algorithm = oqs::kem::Algorithm::Hqc256;
+const CURR_ALGORITHM: oqs::kem::Algorithm = oqs::kem::Algorithm::Kyber512;
 
 /// length of secret key
-pub const SECRET_KEY_LENGTH: usize = 7285;
+pub const SECRET_KEY_LENGTH: usize = 1632;
 /// length of public key
-pub const PUBLIC_KEY_LENGTH: usize = 7245;
+pub const PUBLIC_KEY_LENGTH: usize = 800;
 
 /// length of KEM ciphertext
-pub const CIPHERTEXT_LENGTH: usize = 14469;
+pub const CIPHERTEXT_LENGTH: usize = 768;
 
 /// length of shared secret
-pub const SHARED_SECRET_LENGTH: usize = 64;
+pub const SHARED_SECRET_LENGTH: usize = 32;
 
 /// convert a secret key vector to an array
 pub fn secretKeyVecToArray(v: Vec<u8>) -> [u8; SECRET_KEY_LENGTH] {
