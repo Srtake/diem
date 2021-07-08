@@ -24,8 +24,9 @@ const MSG_SIZE: usize = 4096;
 fn benchmarks(c: &mut Criterion) {
     // bench the handshake
     let mut group = c.benchmark_group("handshake+transport");
-    group.throughput(Throughput::Elements(1));
+    group.throughput(Throughput::Bytes(MSG_SIZE as u64 * 2));
     group.bench_function("noiseik+aes256gcm", |b| {
+        let mut buffer_msg = [0u8; MSG_SIZE * 2];
         // setup keys first
         let mut rng = ::rand::rngs::StdRng::from_seed(TEST_SEED);
         let initiator_static = x25519::PrivateKey::generate(&mut rng);
@@ -56,7 +57,7 @@ fn benchmarks(c: &mut Criterion) {
                 )
                 .unwrap();
 
-            let _ = responder
+            let (_, mut responder_session) = responder
                 .respond_to_client_and_finalize(
                     &mut rng,
                     b"prologue",
@@ -65,20 +66,23 @@ fn benchmarks(c: &mut Criterion) {
                     &mut second_message,
                 )
                 .unwrap();
-            let _ = initiator
+            let (_, mut initiator_session) = initiator
                 .finalize_connection(initiator_state, &second_message)
                 .unwrap();
-
-                let auth_tag = initiator_session
-                .write_message_in_place(&mut buffer_msg[..MSG_SIZE])
-                .expect("session should not be closed");
             
             // Send messages
-            buffer_msg[MSG_SIZE..MSG_SIZE + AES_GCM_TAGLEN].copy_from_slice(&auth_tag);
+            for i in 0..2000 {
+                let auth_tag = initiator_session
+                    .write_message_in_place(&mut buffer_msg[..MSG_SIZE])
+                    .expect("session should not be closed");
+            
+                buffer_msg[MSG_SIZE..MSG_SIZE + AES_GCM_TAGLEN].copy_from_slice(&auth_tag);
 
-            let _plaintext = responder_session
-                .read_message_in_place(&mut buffer_msg[..MSG_SIZE + AES_GCM_TAGLEN])
-                .expect("session should not be closed");
+                let _plaintext = responder_session
+                    .read_message_in_place(&mut buffer_msg[..MSG_SIZE + AES_GCM_TAGLEN])
+                    .expect("session should not be closed");
+            }
+            
         })
     });
     group.finish();
