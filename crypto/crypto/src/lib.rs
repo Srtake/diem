@@ -15,6 +15,7 @@ pub mod hkdf;
 pub mod multi_ed25519;
 pub mod noise;
 pub mod test_utils;
+pub mod bench_utils;
 pub mod traits;
 pub mod x25519;
 pub mod pqc_sig;
