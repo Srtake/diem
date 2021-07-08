@@ -15,8 +15,7 @@ use std::convert::TryFrom as _;
 
 use diem_crypto::{
     noise::{handshake_init_msg_len, handshake_resp_msg_len, NoiseConfig, AES_GCM_TAGLEN},
-    test_utils::TEST_SEED,
-    x25519, Uniform as _, ValidCryptoMaterial as _,
+    x25519, ValidCryptoMaterial as _, bench_utils,
 };
 
 const MSG_SIZE: usize = 4096;
@@ -28,10 +27,9 @@ fn benchmarks(c: &mut Criterion) {
     group.bench_function("noiseik+aes256gcm", |b| {
         let mut buffer_msg = [0u8; MSG_SIZE * 2];
         // setup keys first
-        let mut rng = ::rand::rngs::StdRng::from_seed(TEST_SEED);
-        let initiator_static = x25519::PrivateKey::generate(&mut rng);
+        let initiator_static = x25519::PrivateKey::from_encoded_string(bench_utils::X25519_CLIENT_SECRET_KEY);
         let initiator_static = initiator_static.to_bytes();
-        let responder_static = x25519::PrivateKey::generate(&mut rng);
+        let responder_static = x25519::PrivateKey::from_encoded_string(bench_utils::X25519_SERVER_SECRET_KEY);
         let responder_public = responder_static.public_key();
         let responder_static = responder_static.to_bytes();
 
