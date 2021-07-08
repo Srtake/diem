@@ -6,14 +6,13 @@ use crate::{
     x25519,
 };
 use diem_crypto_derive::{DeserializeKey, SerializeKey, SilentDebug, SilentDisplay};
-use itertools::Itertools;
+use itertools::{Itertools};
 use rand::{CryptoRng, RngCore};
 use std::convert::{TryFrom, TryInto};
 use thiserror::Error;
-use proptest::{collection::vec, prelude::*};
-#[cfg(any(test, feature = "fuzzing"))]
-use proptest_derive::Arbitrary;
-pub use oqs;
+use proptest::*;
+use proptest_derive::*;
+use oqs;
 
 /// Current used KEM algorithm
 const CURR_ALGORITHM: oqs::kem::Algorithm = oqs::kem::Algorithm::Hqc256;
@@ -292,21 +291,21 @@ impl PartialEq for PrivateKey {
 
 // public key part
 
-impl Arbitrary for PublicKey {
-    type Parameters = ();
-    type Strategy = BoxedStrategy<Self>;
+// impl proptest::prelude::Arbitrary for PublicKey {
+//     type Parameters = ();
+//     type Strategy = proptest::prelude::BoxedStrategy<Self>;
 
-    fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
-        let kem = LiboqsKem::try_from(CURR_ALGORITHM).unwrap();
-        let (pk, sk) = kem.kem.keypair().unwrap();
-        any::<PublicKey>()
-            .prop_map(move |_| PublicKey {
-                LENGTH: kem.kem.length_public_key(),
-                KEM: kem.clone(),
-                KEY: pk.clone(),
-            }).boxed()
-    }
-}
+//     fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
+//         let kem = LiboqsKem::try_from(CURR_ALGORITHM).unwrap();
+//         let (pk, sk) = kem.kem.keypair().unwrap();
+//         proptest::prelude::any::<PublicKey>()
+//             .prop_map(move |_| PublicKey {
+//                 LENGTH: kem.kem.length_public_key(),
+//                 KEM: kem.clone(),
+//                 KEY: pk.clone(),
+//             }).boxed()
+//     }
+// }
 
 impl std::convert::From<[u8; PUBLIC_KEY_LENGTH]> for PublicKey {
     fn from(public_key_bytes: [u8; PUBLIC_KEY_LENGTH]) -> Self {
