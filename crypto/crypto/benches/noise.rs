@@ -23,9 +23,9 @@ const MSG_SIZE: usize = 4096;
 
 fn benchmarks(c: &mut Criterion) {
     // bench the handshake
-    let mut group = c.benchmark_group("handshake");
+    let mut group = c.benchmark_group("handshake+transport");
     group.throughput(Throughput::Elements(1));
-    group.bench_function("xx", |b| {
+    group.bench_function("noiseik+aes256gcm", |b| {
         // setup keys first
         let mut rng = ::rand::rngs::StdRng::from_seed(TEST_SEED);
         let initiator_static = x25519::PrivateKey::generate(&mut rng);
@@ -68,56 +68,12 @@ fn benchmarks(c: &mut Criterion) {
             let _ = initiator
                 .finalize_connection(initiator_state, &second_message)
                 .unwrap();
-        })
-    });
-    group.finish();
 
-    let mut transport_group = c.benchmark_group("transport");
-    transport_group.throughput(Throughput::Bytes(MSG_SIZE as u64 * 2));
-    transport_group.bench_function("AES-GCM throughput", |b| {
-        let mut buffer_msg = [0u8; MSG_SIZE * 2];
-
-        // setup keys first
-        let mut rng = ::rand::rngs::StdRng::from_seed(TEST_SEED);
-        let initiator_static = x25519::PrivateKey::generate(&mut rng);
-        let responder_static = x25519::PrivateKey::generate(&mut rng);
-        let responder_public = responder_static.public_key();
-
-        // handshake first
-        let initiator = NoiseConfig::new(initiator_static);
-        let responder = NoiseConfig::new(responder_static);
-
-        let mut first_message = [0u8; handshake_init_msg_len(0)];
-        let mut second_message = [0u8; handshake_resp_msg_len(0)];
-
-        let initiator_state = initiator
-            .initiate_connection(
-                &mut rng,
-                b"prologue",
-                responder_public,
-                None,
-                &mut first_message,
-            )
-            .unwrap();
-        let (_, mut responder_session) = responder
-            .respond_to_client_and_finalize(
-                &mut rng,
-                b"prologue",
-                &first_message,
-                None,
-                &mut second_message,
-            )
-            .unwrap();
-        let (_, mut initiator_session) = initiator
-            .finalize_connection(initiator_state, &second_message)
-            .unwrap();
-
-        // bench throughput post-handshake
-        b.iter(move || {
-            let auth_tag = initiator_session
+                let auth_tag = initiator_session
                 .write_message_in_place(&mut buffer_msg[..MSG_SIZE])
                 .expect("session should not be closed");
-
+            
+            // Send messages
             buffer_msg[MSG_SIZE..MSG_SIZE + AES_GCM_TAGLEN].copy_from_slice(&auth_tag);
 
             let _plaintext = responder_session
@@ -125,7 +81,7 @@ fn benchmarks(c: &mut Criterion) {
                 .expect("session should not be closed");
         })
     });
-    transport_group.finish();
+    group.finish();
 }
 
 criterion_group!(benches, benchmarks);
