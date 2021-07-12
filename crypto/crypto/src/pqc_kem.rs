@@ -136,6 +136,18 @@ impl PrivateKey {
         })
     }
 
+    /// Construct a private key from hex encoded string
+    pub fn new_from_encoded_string(sk: &String) -> Result<Self, CryptoMaterialError> {
+        let kem = LiboqsKem::try_from(CURR_ALGORITHM).unwrap();
+        let mut key_bytes = [0u8; SECRET_KEY_LENGTH];
+        hex::decode_to_slice(*sk, &mut key_bytes as &mut [u8]);
+        Ok(PrivateKey {
+            LENGTH: SECRET_KEY_LENGTH,
+            KEM: kem.clone(),
+            KEY: kem.kem.secret_key_from_bytes(&key_bytes).unwrap().to_owned(),
+        })
+    }
+
     /// Construct a private key from an OQS SecretKey type
     pub fn new_from_oqs(sk: &oqs::kem::SecretKey) -> Result<Self, CryptoMaterialError> {
         let kem = LiboqsKem::try_from(CURR_ALGORITHM).unwrap();
@@ -198,6 +210,18 @@ impl PublicKey {
                 .public_key_from_bytes(bytes_param)
                 .unwrap()
                 .to_owned(),
+        })
+    }
+
+    /// Construct a PublicKey from hex encoded string
+    pub fn new_from_encoded_string(pk: &String) -> Result<Self, CryptoMaterialError> {
+        let kem = LiboqsKem::try_from(CURR_ALGORITHM).unwrap();
+        let mut pubkey_bytes = [0u8; PUBLIC_KEY_LENGTH];
+        hex::decode_to_slice(*pk, &mut pubkey_bytes as &mut [u8])
+        Ok(PublicKey {
+            LENGTH: PUBLIC_KEY_LENGTH,
+            KEM: kem.clone(),
+            KEY: kem.kem.public_key_from_bytes(&pubkey_bytes).unwarp().to_owned(),
         })
     }
 
