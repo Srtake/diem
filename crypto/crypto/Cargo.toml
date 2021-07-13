@@ -63,5 +63,9 @@ name = "noise"
 harness = false
 
 [[bench]]
-name = "ed25519"
+name = "hfs_noise"
+harness = false
+
+[[bench]]
+name = "pqc_noise"
 harness = false

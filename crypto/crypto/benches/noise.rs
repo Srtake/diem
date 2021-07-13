@@ -11,11 +11,12 @@ extern crate criterion;
 
 use criterion::{Criterion, Throughput};
 use rand::SeedableRng;
+use rand::prelude::*;
 use std::convert::TryFrom as _;
 
 use diem_crypto::{
     noise::{handshake_init_msg_len, handshake_resp_msg_len, NoiseConfig, AES_GCM_TAGLEN},
-    x25519, ValidCryptoMaterial as _, bench_utils,
+    x25519, bench_utils, ValidCryptoMaterial as _, test_utils::TEST_SEED, ValidCryptoMaterialStringExt,
 };
 
 const MSG_SIZE: usize = 4096;
@@ -27,11 +28,12 @@ fn benchmarks(c: &mut Criterion) {
     group.bench_function("noiseik+aes256gcm", |b| {
         let mut buffer_msg = [0u8; MSG_SIZE * 2];
         // setup keys first
+        let mut rng: StdRng = SeedableRng::from_seed(TEST_SEED);
         let initiator_static = x25519::PrivateKey::from_encoded_string(bench_utils::X25519_CLIENT_SECRET_KEY);
-        let initiator_static = initiator_static.to_bytes();
+        let initiator_static = initiator_static.unwrap().to_bytes();
         let responder_static = x25519::PrivateKey::from_encoded_string(bench_utils::X25519_SERVER_SECRET_KEY);
-        let responder_public = responder_static.public_key();
-        let responder_static = responder_static.to_bytes();
+        let responder_public = responder_static.clone().unwrap().public_key();
+        let responder_static = responder_static.clone().unwrap().to_bytes();
 
         let mut first_message = [0u8; handshake_init_msg_len(0)];
         let mut second_message = [0u8; handshake_resp_msg_len(0)];
@@ -69,7 +71,7 @@ fn benchmarks(c: &mut Criterion) {
                 .unwrap();
             
             // Send messages
-            for i in 0..2000 {
+            for i in 0..1 {
                 let auth_tag = initiator_session
                     .write_message_in_place(&mut buffer_msg[..MSG_SIZE])
                     .expect("session should not be closed");

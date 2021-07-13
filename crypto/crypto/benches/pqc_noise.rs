@@ -9,8 +9,8 @@ use rand::SeedableRng;
 use std::convert::TryFrom as _;
 
 use diem_crypto::{
-    pq_noise::{handshake_init_msg_len, handshake_resp_msg_len, PQNoiseConfig, AES_GCM_TAGLEN},
-    pqc_kem, ValidCryptoMaterial as _, bench_utils,
+    pqc_noise::{handshake_init_msg_len, handshake_resp_msg_len, PQNoiseConfig, AES_GCM_TAGLEN},
+    pqc_kem, bench_utils, ValidCryptoMaterial as _,
 };
 
 const MSG_SIZE: usize = 4096;
@@ -22,23 +22,28 @@ fn benchmarks(c: &mut Criterion) {
     group.bench_function("noiseikpq+aes256gcm", |b| {
         let mut buffer_msg = [0u8; MSG_SIZE * 2];
         // setup keys first
-        let initiator_static = pqc_kem::PrivateKey::new_from_encoded_string(bench_utils::HQC_128_CLIENT_SECRET_KEY);
-        let initiator_static = initiator_static.to_bytes();
-        let responder_static = pqc_kem::PrivateKey::new_from_encoded_string(bench_utils::HQC_128_SERVER_SECRET_KEY);
-        let responder_public = pqc_kem::PublicKey::new_from_encoded_string(bench_utils::HQC_128_SERVER_PUBLIC_KEY);
-        let responder_static = responder_static.to_bytes();
+        let initiator_static = pqc_kem::PrivateKey::new_from_encoded_string(&(String::from(bench_utils::HQC_128_CLIENT_SECRET_KEY)));
+        let initiator_public = pqc_kem::PublicKey::new_from_encoded_string(&(String::from(bench_utils::HQC_128_CLIENT_PUBLIC_KEY))).unwrap();
+        let initiator_static = initiator_static.unwrap().to_bytes();
+        let responder_static = pqc_kem::PrivateKey::new_from_encoded_string(&(String::from(bench_utils::HQC_128_SERVER_SECRET_KEY)));
+        let responder_public = pqc_kem::PublicKey::new_from_encoded_string(&(String::from(bench_utils::HQC_128_SERVER_PUBLIC_KEY))).unwrap();
+        let responder_static = responder_static.unwrap().to_bytes();
 
         let mut first_message = [0u8; handshake_init_msg_len(0)];
         let mut second_message = [0u8; handshake_resp_msg_len(0)];
 
         b.iter(|| {
             let initiator_static = 
-                pqc_kem::PrivateKey::try_from(initiator_static.clone().to_bytes()).unwrap();
+                pqc_kem::PrivateKey::try_from(initiator_static.clone()).unwrap();
             let responder_static = 
-                pqc_kem::PrivateKey::try_from(responder_static.clone().to_bytes()).unwrap();
+                pqc_kem::PrivateKey::try_from(responder_static.clone()).unwrap();
+            let initiator_public = 
+                pqc_kem::PublicKey::try_from(initiator_public.clone()).unwrap();
+            let responder_public = 
+                pqc_kem::PublicKey::try_from(responder_public.clone()).unwrap();
             
-            let initiator = NoiseConfig::new(initiator_static);
-            let responder = NoiseConfig::new(responder_static);
+            let initiator = PQNoiseConfig::new(initiator_static, initiator_public.clone());
+            let responder = PQNoiseConfig::new(responder_static, responder_public.clone());
 
             let initiator_state = initiator
                 .initiate_connection(
@@ -63,7 +68,7 @@ fn benchmarks(c: &mut Criterion) {
                 .unwrap();
             
             // Send messages
-            for i in 0..2000 {
+            for i in 0..1 {
                 let auth_tag = initiator_session
                     .write_message_in_place(&mut buffer_msg[..MSG_SIZE])
                     .expect("session should not be closed");

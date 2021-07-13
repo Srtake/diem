@@ -15,15 +15,15 @@ use proptest_derive::*;
 use oqs;
 
 /// Current used KEM algorithm
-const CURR_ALGORITHM: oqs::kem::Algorithm = oqs::kem::Algorithm::Hqc256;
+const CURR_ALGORITHM: oqs::kem::Algorithm = oqs::kem::Algorithm::Hqc128;
 
 /// length of secret key
-pub const SECRET_KEY_LENGTH: usize = 7285;
+pub const SECRET_KEY_LENGTH: usize = 2289;
 /// length of public key
-pub const PUBLIC_KEY_LENGTH: usize = 7245;
+pub const PUBLIC_KEY_LENGTH: usize = 2249;
 
 /// length of KEM ciphertext
-pub const CIPHERTEXT_LENGTH: usize = 14469;
+pub const CIPHERTEXT_LENGTH: usize = 4481;
 
 /// length of shared secret
 pub const SHARED_SECRET_LENGTH: usize = 64;
@@ -140,7 +140,7 @@ impl PrivateKey {
     pub fn new_from_encoded_string(sk: &String) -> Result<Self, CryptoMaterialError> {
         let kem = LiboqsKem::try_from(CURR_ALGORITHM).unwrap();
         let mut key_bytes = [0u8; SECRET_KEY_LENGTH];
-        hex::decode_to_slice(*sk, &mut key_bytes as &mut [u8]);
+        hex::decode_to_slice((*sk).clone(), &mut key_bytes as &mut [u8]);
         Ok(PrivateKey {
             LENGTH: SECRET_KEY_LENGTH,
             KEM: kem.clone(),
@@ -217,11 +217,11 @@ impl PublicKey {
     pub fn new_from_encoded_string(pk: &String) -> Result<Self, CryptoMaterialError> {
         let kem = LiboqsKem::try_from(CURR_ALGORITHM).unwrap();
         let mut pubkey_bytes = [0u8; PUBLIC_KEY_LENGTH];
-        hex::decode_to_slice(*pk, &mut pubkey_bytes as &mut [u8])
+        hex::decode_to_slice((*pk).clone(), &mut pubkey_bytes as &mut [u8]);
         Ok(PublicKey {
             LENGTH: PUBLIC_KEY_LENGTH,
             KEM: kem.clone(),
-            KEY: kem.kem.public_key_from_bytes(&pubkey_bytes).unwarp().to_owned(),
+            KEY: kem.kem.public_key_from_bytes(&pubkey_bytes).unwrap().to_owned(),
         })
     }
 
