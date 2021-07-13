@@ -36,6 +36,7 @@ pub struct Args {
     pub tcp_noise_hfs_addr: Option<NetworkAddress>,
     pub tcp_noise_pq_addr: Option<NetworkAddress>,
     pub msg_lens: Option<Vec<usize>>,
+    pub msg_amount: Option<Vec<usize>>,
 }
 
 fn parse_addr(s: OsString) -> NetworkAddress {
@@ -45,15 +46,11 @@ fn parse_addr(s: OsString) -> NetworkAddress {
         .expect("Error: Address should be a multiaddr")
 }
 
-fn parse_msg_lens(s: OsString) -> Vec<usize> {
-    let s = s
-        .into_string()
-        .expect("Error: $MSG_LENS should be valid Unicode");
-
+fn check_array_format(s: OsString) -> Vec<usize> {
     // check for surrounding array brackets
     if &s[..1] != "[" || &s[s.len() - 1..] != "]" {
         panic!(
-            "Error: Malformed $MSG_LENS: \"{}\": Should be formatted like an array \"[123, 456]\"",
+            "Error: Malformed $MSG_LENS or $MSG_AMOUNT: \"{}\": Should be formatted like an array \"[123, 456]\"",
             s
         );
     }
@@ -64,9 +61,25 @@ fn parse_msg_lens(s: OsString) -> Vec<usize> {
         .map(|ss| {
             ss.trim()
                 .parse::<usize>()
-                .expect("Error: Malformed $MSG_LENS: Failed to parse usize")
+                .expect("Error: Malformed $MSG_LENS or $MSG_AMOUNT: Failed to parse usize")
         })
         .collect()
+}
+
+fn parse_msg_lens(s: OsString) -> Vec<usize> {
+    let s = s
+        .into_string()
+        .expect("Error: $MSG_LENS should be valid Unicode");
+
+    check_array_format(s)
+}
+
+fn parse_msg_amount(s: OsString) -> Vec<usize> {
+    let s = s
+        .into_string()
+        .expect("Error: $MSG_AMOUNT should be valid Unicode");
+    
+    check_array_format(s)
 }
 
 impl Args {
@@ -77,6 +90,7 @@ impl Args {
             tcp_noise_hfs_addr: env::var_os("TCP_NOISE_HFS_ADDR").map(parse_addr),
             tcp_noise_pq_addr: env::var_os("TCP_NOISE_PQ_ADDR").map(parse_addr),
             msg_lens: env::var_os("MSG_LENS").map(parse_msg_lens),
+            msg_amount: env::var_os("MSG_AMOUNT").map(parse_msg_amount),
         }
     }
 }
