@@ -11,22 +11,22 @@ use rand::{CryptoRng, RngCore};
 use std::convert::{TryFrom, TryInto};
 use thiserror::Error;
 use proptest::*;
-use proptest_derive::*;
+use proptest::prelude::{Arbitrary, Strategy, BoxedStrategy, any};
 use oqs;
 
 /// Current used KEM algorithm
-const CURR_ALGORITHM: oqs::kem::Algorithm = oqs::kem::Algorithm::Hqc128;
+const CURR_ALGORITHM: oqs::kem::Algorithm = oqs::kem::Algorithm::ClassicMcEliece348864;
 
 /// length of secret key
-pub const SECRET_KEY_LENGTH: usize = 2289;
+pub const SECRET_KEY_LENGTH: usize = 6452;
 /// length of public key
-pub const PUBLIC_KEY_LENGTH: usize = 2249;
+pub const PUBLIC_KEY_LENGTH: usize = 261120;
 
 /// length of KEM ciphertext
-pub const CIPHERTEXT_LENGTH: usize = 4481;
+pub const CIPHERTEXT_LENGTH: usize = 128;
 
 /// length of shared secret
-pub const SHARED_SECRET_LENGTH: usize = 64;
+pub const SHARED_SECRET_LENGTH: usize = 32;
 
 /// convert a secret key vector to an array
 pub fn secretKeyVecToArray(v: Vec<u8>) -> [u8; SECRET_KEY_LENGTH] {
@@ -315,21 +315,21 @@ impl PartialEq for PrivateKey {
 
 // public key part
 
-// impl proptest::prelude::Arbitrary for PublicKey {
-//     type Parameters = ();
-//     type Strategy = proptest::prelude::BoxedStrategy<Self>;
+impl Arbitrary for PublicKey {
+    type Parameters = ();
+    type Strategy = BoxedStrategy<Self>;
 
-//     fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
-//         let kem = LiboqsKem::try_from(CURR_ALGORITHM).unwrap();
-//         let (pk, sk) = kem.kem.keypair().unwrap();
-//         proptest::prelude::any::<PublicKey>()
-//             .prop_map(move |_| PublicKey {
-//                 LENGTH: kem.kem.length_public_key(),
-//                 KEM: kem.clone(),
-//                 KEY: pk.clone(),
-//             }).boxed()
-//     }
-// }
+    fn arbitrary_with(_args: Self::Parameters) -> Self::Strategy {
+        let kem = LiboqsKem::try_from(CURR_ALGORITHM).unwrap();
+        let (pk, sk) = kem.kem.keypair().unwrap();
+        any::<PublicKey>()
+            .prop_map(move |_| PublicKey {
+                LENGTH: kem.kem.length_public_key(),
+                KEM: kem.clone(),
+                KEY: pk.clone(),
+            }).boxed()
+    }
+}
 
 impl std::convert::From<[u8; PUBLIC_KEY_LENGTH]> for PublicKey {
     fn from(public_key_bytes: [u8; PUBLIC_KEY_LENGTH]) -> Self {

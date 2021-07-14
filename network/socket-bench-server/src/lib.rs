@@ -35,7 +35,6 @@ pub struct Args {
     pub tcp_noise_addr: Option<NetworkAddress>,
     pub tcp_noise_hfs_addr: Option<NetworkAddress>,
     pub tcp_noise_pq_addr: Option<NetworkAddress>,
-    pub msg_lens: Option<Vec<usize>>,
     pub msg_amount: Option<Vec<usize>>,
 }
 
@@ -46,7 +45,7 @@ fn parse_addr(s: OsString) -> NetworkAddress {
         .expect("Error: Address should be a multiaddr")
 }
 
-fn check_array_format(s: OsString) -> Vec<usize> {
+fn check_array_format(s: String) -> Vec<usize> {
     // check for surrounding array brackets
     if &s[..1] != "[" || &s[s.len() - 1..] != "]" {
         panic!(
@@ -66,14 +65,6 @@ fn check_array_format(s: OsString) -> Vec<usize> {
         .collect()
 }
 
-fn parse_msg_lens(s: OsString) -> Vec<usize> {
-    let s = s
-        .into_string()
-        .expect("Error: $MSG_LENS should be valid Unicode");
-
-    check_array_format(s)
-}
-
 fn parse_msg_amount(s: OsString) -> Vec<usize> {
     let s = s
         .into_string()
@@ -89,7 +80,6 @@ impl Args {
             tcp_noise_addr: env::var_os("TCP_NOISE_ADDR").map(parse_addr),
             tcp_noise_hfs_addr: env::var_os("TCP_NOISE_HFS_ADDR").map(parse_addr),
             tcp_noise_pq_addr: env::var_os("TCP_NOISE_PQ_ADDR").map(parse_addr),
-            msg_lens: env::var_os("MSG_LENS").map(parse_msg_lens),
             msg_amount: env::var_os("MSG_AMOUNT").map(parse_msg_amount),
         }
     }

@@ -67,5 +67,5 @@ fuzzing = ["bitvec/fuzzing", "diem-crypto/fuzzing", "diem-types/fuzzing", "diem-
 testing = ["diem-config/testing", "diem-time-service/testing", "memsocket/testing", "netcore/testing"]
 
 [[bench]]
-name = "socket_bench"
+name = "socket_bench_new"
 harness = false

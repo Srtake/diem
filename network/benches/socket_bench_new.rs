@@ -12,7 +12,7 @@ use criterion::{
     criterion_group, criterion_main, AxisScale, Bencher, Criterion, ParameterizedBenchmark,
     PlotConfiguration, Throughput,
 };
-use diem_crypto::{pqc_kem, x25519, test_utils::TEST_SEED, bench_utils, Uniform as _};
+use diem_crypto::{pqc_kem, x25519, ValidCryptoMaterialStringExt, test_utils::TEST_SEED, bench_utils, Uniform as _};
 use diem_logger::prelude::*;
 use diem_types::{network_address::NetworkAddress, PeerId};
 use futures::{
@@ -125,7 +125,7 @@ fn bench_memsocket_noise_send(
             remote_public_key.clone(),
         );
         let _client_stream =
-            bench_client_stream_send(*msg_amount, *msg_len, &mut runtime, server_addr, clinet_transport);
+            bench_client_stream_send(*msg_amount, *msg_len, &mut runtime, server_addr.clone(), client_transport);
     });
 }
 
@@ -154,7 +154,7 @@ fn bench_memsocket_noise_hfs_send(
             remote_public_key.clone(),
         );
         let _client_stream =
-            bench_client_stream_send(*msg_amount, *msg_len, &mut runtime, server_addr, clinet_transport);
+            bench_client_stream_send(*msg_amount, *msg_len, &mut runtime, server_addr.clone(), client_transport);
     });
 }
 
@@ -187,7 +187,7 @@ fn bench_memsocket_noise_pq_send(
             remote_public_key.clone(),
         );
         let _client_stream =
-            bench_client_stream_send(*msg_amount, *msg_len, &mut runtime, server_addr, clinet_transport);
+            bench_client_stream_send(*msg_amount, *msg_len, &mut runtime, server_addr.clone(), client_transport);
     });    
 }
 
@@ -216,7 +216,7 @@ fn bench_tcp_noise_send(
             remote_public_key.clone(),
         );
         let _client_stream =
-            bench_client_stream_send(*msg_amount, *msg_len, &mut runtime, server_addr, clinet_transport);
+            bench_client_stream_send(*msg_amount, *msg_len, &mut runtime, server_addr.clone(), client_transport);
     });
 }
 
@@ -245,7 +245,7 @@ fn bench_tcp_noise_hfs_send(
             remote_public_key.clone(),
         );
         let _client_stream =
-            bench_client_stream_send(*msg_amount, *msg_len, &mut runtime, server_addr, clinet_transport);
+            bench_client_stream_send(*msg_amount, *msg_len, &mut runtime, server_addr.clone(), client_transport);
     });
 }
 
@@ -278,7 +278,7 @@ fn bench_tcp_noise_pq_send(
             remote_public_key.clone(),
         );
         let _client_stream =
-            bench_client_stream_send(*msg_amount, *msg_len, &mut runtime, server_addr, clinet_transport);
+            bench_client_stream_send(*msg_amount, *msg_len, &mut runtime, server_addr.clone(), client_transport);
     });    
 }
 
@@ -295,8 +295,8 @@ fn socket_bench(c: &mut Criterion) {
     let args = Args::from_env();
 
     // Parameterize benchmarks over the message length.
-    let default_msg_lens = vec![128 * KiB];
-    let msg_lens = args.msg_lens.unwrap_or(default_msg_lens);
+    let default_msg_lens = 128 * KiB;
+    let msg_lens = default_msg_lens;
     let default_msg_amount = vec![1];
     let msg_amount = args.msg_amount.unwrap_or(default_msg_amount);
 
@@ -309,7 +309,7 @@ fn socket_bench(c: &mut Criterion) {
         &(String::from(bench_utils::HQC_128_SERVER_PUBLIC_KEY))).unwrap();
 
     // Start local noiseik bench server
-    let x25519_local_ik_private = x25519::PrivateKey::from_encoded_string(bench_utils::X25519_SERVER_SECRET_KEY).unwrap();
+    let x25519_local_ik_private = x25519::PrivateKey::from_encoded_string(bench_utils::X25519_CLIENT_SECRET_KEY).unwrap();
     let x25519_local_ik_public = x25519_local_ik_private.public_key();
     let default_tcp_noise_addr = start_stream_server(
         &executor,
@@ -318,12 +318,12 @@ fn socket_bench(c: &mut Criterion) {
             x25519_remote_public.clone(),
             x25519_local_ik_public.clone(),
         ),
-        "/ip4/127.0.0.1/tcp/0".parse().unwrap(),
+        "/ip4/127.0.0.1/tcp/51000".parse().unwrap(),
     );
-    let tcp_noise_addr = args.tcp_noise_addr.unwrap_or(default_tcp_noise_addr);
+    let tcp_noise_addr = args.tcp_noise_addr.unwrap_or(default_tcp_noise_addr.clone());
 
     // Start local noiseikhfs bench server
-    let x25519_local_ikhfs_private = x25519::PrivateKey::from_encoded_string(bench_utils::X25519_SERVER_SECRET_KEY).unwrap();
+    let x25519_local_ikhfs_private = x25519::PrivateKey::from_encoded_string(bench_utils::X25519_CLIENT_SECRET_KEY).unwrap();
     let x25519_local_ikhfs_public = x25519_local_ikhfs_private.public_key();
     let default_tcp_noise_hfs_addr = start_stream_server(
         &executor,
@@ -332,15 +332,15 @@ fn socket_bench(c: &mut Criterion) {
             x25519_remote_public.clone(),
             x25519_local_ikhfs_public.clone(),
         ),
-        "/ip4/127.0.0.1/tcp/0".parse().unwrap(),
+        "/ip4/127.0.0.1/tcp/51001".parse().unwrap(),
     );
-    let tcp_noise_hfs_addr = args.tcp_noise_hfs_addr.unwrap_or(default_tcp_noise_addr);
+    let tcp_noise_hfs_addr = args.tcp_noise_hfs_addr.unwrap_or(default_tcp_noise_hfs_addr.clone());
 
     // Start local noiseikpq bench server
     let pq_local_ikpq_private = pqc_kem::PrivateKey::new_from_encoded_string(
-        &(String::from(bench_utils::HQC_128_CLIENT_SECRET_KEY)));
+        &(String::from(bench_utils::HQC_128_CLIENT_SECRET_KEY))).unwrap();
     let pq_local_ikpq_public = pqc_kem::PublicKey::new_from_encoded_string(
-        &(String::from(bench_utils::HQC_128_CLIENT_PUBLIC_KEY)));
+        &(String::from(bench_utils::HQC_128_CLIENT_PUBLIC_KEY))).unwrap();
     let default_tcp_noise_pq_addr = start_stream_server(
         &executor,
         build_tcp_noise_pq_transport(
@@ -348,49 +348,38 @@ fn socket_bench(c: &mut Criterion) {
             pq_remote_public.clone(),
             pq_local_ikpq_public.clone(),
         ),
-        "/ip4/127.0.0.1/tcp/0".parse().unwrap(),
+        "/ip4/127.0.0.1/tcp/51002".parse().unwrap(),
     );
-    let tcp_noise_pq_addr = args.tcp_noise_pq_addr.unwrap_or(default_tcp_noise_pq_addr);
+    let tcp_noise_pq_addr = args.tcp_noise_pq_addr.unwrap_or(default_tcp_noise_pq_addr.clone());
 
     // Add the tcp loopback socket benches
     let mut bench = ParameterizedBenchmark::new(
         "noise_ik_connections",
-        move |b| {
-            let local_sk = x25519_local_ik_private.clone();
-            let local_pk = x25519_local_ik_public.clone();
-            let remote_pk = x25519_remote_public.clone();
-            bench_memsocket_noise_send(
+        move |b, msg_amount| {
+            bench_tcp_noise_send(
                 b,
                 msg_amount,
-                msg_lens,
+                &msg_lens,
                 tcp_noise_addr.clone(),
-            ),
-            msg_amount,
-        }
+            )
+        },
+        msg_amount,
     )
-    .with_function("noise_ikhfs_connections", move |b| {
-        let local_sk = x25519_local_ikhfs_private.clone();
-        let local_pk = x25519_local_ikhfs_public.clone();
-        let remote_pk = x25519_remote_public.clone();
+    .with_function("noise_ikhfs_connections", move |b, msg_amount| {
         bench_tcp_noise_hfs_send(
             b,
             msg_amount,
-            msg_lens,
+            &msg_lens,
             tcp_noise_hfs_addr.clone(),
-        ),
-        msg_amount,
+        )
     })
-    .with_function("noise_ikpq_connections", move |b| {
-        let local_sk = pq_local_ikpq_private.clone();
-        let local_pk = pq_local_ikpq_public.clone();
-        let remote_pk = pq_remote_public.clone();
+    .with_function("noise_ikpq_connections", move |b, msg_amount| {
         bench_tcp_noise_pq_send(
             b,
             msg_amount,
-            msg_lens,
+            &msg_lens,
             tcp_noise_pq_addr.clone(),
-        ),
-        msg_amount,
+        )
     });
 
     // Setup benchmark
@@ -399,10 +388,10 @@ fn socket_bench(c: &mut Criterion) {
         .measurement_time(Duration::from_secs(10))
         .sample_size(100)
         .plot_config(PlotConfiguration::default().summary_scale(AxisScale::Logarithmic))
-        .throughput(|msg_len| {
-            let msg_len = *msg_len as u32;
-            let num_msgs = msg_amount as u32;
-            Throughput::Bytes(u64::from(msg_len * num_msgs)
+        .throughput(move |msg_amount| {
+            let msg_lens = msg_lens as u32;
+            let msg_amount = *msg_amount as u32;
+            Throughput::Bytes(u64::from(msg_lens * msg_amount))
         });
     
     c.bench("noise_connections", bench);

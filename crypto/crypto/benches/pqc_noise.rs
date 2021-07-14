@@ -22,11 +22,11 @@ fn benchmarks(c: &mut Criterion) {
     group.bench_function("noiseikpq+aes256gcm", |b| {
         let mut buffer_msg = [0u8; MSG_SIZE * 2];
         // setup keys first
-        let initiator_static = pqc_kem::PrivateKey::new_from_encoded_string(&(String::from(bench_utils::HQC_128_CLIENT_SECRET_KEY)));
-        let initiator_public = pqc_kem::PublicKey::new_from_encoded_string(&(String::from(bench_utils::HQC_128_CLIENT_PUBLIC_KEY))).unwrap();
+        let initiator_static = pqc_kem::PrivateKey::new_from_encoded_string(&(String::from(bench_utils::CLASSIC_MCELIECE_348864_CLIENT_SECRET_KEY)));
+        let initiator_public = pqc_kem::PublicKey::new_from_encoded_string(&(String::from(bench_utils::CLASSIC_MCELIECE_348864_CLIENT_PUBLIC_KEY))).unwrap();
         let initiator_static = initiator_static.unwrap().to_bytes();
-        let responder_static = pqc_kem::PrivateKey::new_from_encoded_string(&(String::from(bench_utils::HQC_128_SERVER_SECRET_KEY)));
-        let responder_public = pqc_kem::PublicKey::new_from_encoded_string(&(String::from(bench_utils::HQC_128_SERVER_PUBLIC_KEY))).unwrap();
+        let responder_static = pqc_kem::PrivateKey::new_from_encoded_string(&(String::from(bench_utils::CLASSIC_MCELIECE_348864_SERVER_SECRET_KEY)));
+        let responder_public = pqc_kem::PublicKey::new_from_encoded_string(&(String::from(bench_utils::CLASSIC_MCELIECE_348864_SERVER_PUBLIC_KEY))).unwrap();
         let responder_static = responder_static.unwrap().to_bytes();
 
         let mut first_message = [0u8; handshake_init_msg_len(0)];
